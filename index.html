@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>瑞盛服饰退货管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1a56db',
+                        danger: '#ef4444',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        // 左侧栏菜单配色 - 统一规范
+                        navActive: '#2563eb',    // 焦点/选中状态（蓝色）
+                        navInactive: '#4b5563',  // 非焦点/未选中状态（灰色）
+                        navHover: '#374151'      // 非焦点项hover状态（深灰色）
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .shadow-card { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+            .transition-all { transition: all 0.15s ease; }
+            /* 自定义模态框样式 */
+            .modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s ease, visibility 0.3s ease;
+            }
+            .modal-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+            .modal-content {
+                background-color: white;
+                border-radius: 8px;
+                padding: 2rem;
+                min-width: 380px;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+                transform: translateY(-20px);
+                transition: transform 0.3s ease, opacity 0.3s ease;
+                opacity: 0;
+            }
+            .modal-overlay.active .modal-content {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            .modal-btn {
+                padding: 1rem 2rem;
+                border-radius: 6px;
+                font-size: 1.1rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                min-width: 120px;
+            }
+            /* 查询表格样式 */
+            .table-cell-large {
+                font-size: 1rem !important;
+                padding: 12px 24px !important;
+                line-height: 1.5 !important;
+            }
+            .table-header-large {
+                font-size: 0.9rem !important;
+                padding: 12px 24px !important;
+                font-weight: 600 !important;
+            }
+            /* 左侧导航菜单样式 */
+            .nav-item {
+                font-size: 1.1rem !important;
+                padding: 1.25rem 1.5rem !important;
+                font-weight: 500 !important;
+            }
+            .nav-icon {
+                font-size: 1.3rem !important;
+                width: 2rem !important;
+                margin-right: 0.75rem !important;
+            }
+            /* Logo联想提示框样式 */
+            .autocomplete-container {
+                position: relative;
+                width: 100%;
+            }
+            .autocomplete-list {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                max-height: 200px;
+                overflow-y: auto;
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-top: none;
+                border-radius: 0 0 0.375rem 0.375rem;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                z-index: 10;
+                margin: 0;
+                padding: 0;
+                list-style: none;
+                display: none;
+            }
+            .autocomplete-list.show {
+                display: block;
+            }
+            .autocomplete-item {
+                padding: 0.75rem 1rem;
+                cursor: pointer;
+                transition: background-color 0.2s ease;
+            }
+            .autocomplete-item:hover {
+                background-color: #f3f4f6;
+            }
+            .autocomplete-item.active {
+                background-color: #eff6ff;
+                color: #1a56db;
+            }
+            /* 错误提示样式 */
+            .error-border {
+                border-color: #ef4444 !important;
+            }
+            .error-text {
+                color: #ef4444 !important;
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+<div class="flex h-screen overflow-hidden">
+
+    <!-- 左侧导航 - 初始状态：添加记录为蓝色（焦点），查询记录为灰色（非焦点） -->
+    <aside class="bg-gray-800 text-white w-64 hidden md:block">
+        <div class="p-4 border-b border-gray-700">
+            <h1 class="text-xl font-bold flex items-center">
+                <i class="fa fa-shopping-bag mr-2"></i> 瑞盛服饰退货管理
+            </h1>
+        </div>
+        <nav class="mt-5">
+            <ul>
+                <li>
+                    <a href="#add" class="nav-item flex items-center bg-navActive text-white" onclick="switchTab('add')">
+                        <i class="fa fa-plus-circle nav-icon"></i> <span>添加记录</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#query" class="nav-item flex items-center bg-navInactive text-gray-100 hover:bg-navHover hover:text-white transition-all" onclick="switchTab('query')">
+                        <i class="fa fa-search nav-icon"></i> <span>查询记录</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- 右侧内容区 -->
+    <main class="flex-1 overflow-y-auto">
+        <!-- 顶部数据总览 -->
+        <header class="bg-white shadow-sm p-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <h2 id="pageTitle" class="text-lg font-semibold text-gray-800">添加退货记录</h2>
+                <div class="flex gap-4">
+                    <div class="px-4 py-2 bg-primary/10 rounded-lg text-center">
+                        <p class="text-xs text-gray-500">总记录数</p>
+                        <p class="text-xl font-bold text-primary" id="totalCount">0</p>
+                    </div>
+                    <div class="px-4 py-2 bg-success/10 rounded-lg text-center">
+                        <p class="text-xs text-gray-500">男款数量</p>
+                        <p class="text-xl font-bold text-success" id="maleCount">0</p>
+                    </div>
+                    <div class="px-4 py-2 bg-warning/10 rounded-lg text-center">
+                        <p class="text-xs text-gray-500">女款数量</p>
+                        <p class="text-xl font-bold text-warning" id="femaleCount">0</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 添加记录页面 -->
+        <div id="addPage" class="p-6 block">
+            <div class="bg-white rounded-lg shadow-card p-6">
+                <h3 class="text-lg font-semibold mb-6">添加退货记录</h3>
+                <form id="addForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- 货品编号 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">货品编号 <span class="text-danger">*</span></label>
+                            <input type="text" id="goodsNo" placeholder="输入数字序号（如1、2、3...）" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" oninput="validateGoodsNo()">
+                            <p id="goodsNoTip" class="mt-1 text-xs text-gray-400 hidden">编号已存在，请修改！</p>
+                            <p id="goodsNoRule" class="mt-1 text-xs text-gray-400">编号规则：纯数字序号，不可与现有记录重复</p>
+                        </div>
+                        <!-- 衣服Logo -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">衣服Logo <span class="text-danger">*</span></label>
+                            <input type="text" id="logo" placeholder="例如：Nike、Adidas、李宁" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" onblur="autoFillModel()">
+                        </div>
+                        <!-- 衣服型号 -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">衣服型号 <span class="text-danger">*</span></label>
+                            <input type="text" id="model" placeholder="例如：2024款短袖T恤、AJ1高帮、休闲裤K889" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                            <p id="modelTip" class="mt-1 text-xs text-gray-400 hidden">已自动匹配同款型号，可手动修改</p>
+                        </div>
+                        <!-- 性别 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">性别 <span class="text-danger">*</span></label>
+                            <select id="gender" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" onchange="autoFillModel()">
+                                <option value="">请选择</option>
+                                <option value="male">男性</option>
+                                <option value="female">女性</option>
+                            </select>
+                        </div>
+                        <!-- 尺码 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">尺码 <span class="text-danger">*</span></label>
+                            <select id="size" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" onchange="autoFillModel()">
+                                <option value="">请选择</option>
+                                <option value="35">35</option><option value="36">36</option><option value="37">37</option>
+                                <option value="38">38</option><option value="39">39</option><option value="40">40</option>
+                                <option value="41">41</option><option value="42">42</option><option value="43">43</option>
+                                <option value="44">44</option><option value="45">45</option><option value="46">46</option>
+                                <option value="47">47</option>
+                            </select>
+                        </div>
+                        <!-- 退货日期 -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">退货日期 <span class="text-danger">*</span></label>
+                            <input type="date" id="returnDate" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-4">
+                        <button type="reset" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100" onclick="resetForm()">重置</button>
+                        <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700">保存记录</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 查询记录页面 -->
+        <div id="queryPage" class="p-6 hidden">
+            <div class="bg-white rounded-lg shadow-card p-6">
+                <h3 class="text-lg font-semibold mb-6">查询退货记录</h3>
+                <!-- 筛选条件 -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <!-- Logo输入框（带联想提示） -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">衣服Logo</label>
+                        <div class="autocomplete-container">
+                            <input 
+                                type="text" 
+                                id="queryLogo" 
+                                placeholder="输入Logo关键词" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                oninput="showLogoSuggestions()"
+                                onblur="hideLogoSuggestions(200)"
+                                onfocus="showLogoSuggestions()"
+                            >
+                            <ul id="logoSuggestions" class="autocomplete-list"></ul>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">性别</label>
+                        <select id="queryGender" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="">全部</option>
+                            <option value="male">男性</option>
+                            <option value="female">女性</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">尺码</label>
+                        <select id="querySize" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="">全部</option>
+                            <option value="35">35</option><option value="36">36</option><option value="37">37</option>
+                            <option value="38">38</option><option value="39">39</option><option value="40">40</option>
+                            <option value="41">41</option><option value="42">42</option><option value="43">43</option>
+                            <option value="44">44</option><option value="45">45</option><option value="46">46</option>
+                            <option value="47">47</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">衣服型号</label>
+                        <select id="queryModel" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="">全部</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end mb-6 space-x-4">
+                    <button onclick="resetQuery()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100">重置</button>
+                    <button onclick="queryRecords()" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700"><i class="fa fa-search mr-2"></i>查询</button>
+                </div>
+                <!-- 结果表格 -->
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="table-header-large text-left text-gray-500">货品编号</th>
+                                <th class="table-header-large text-left text-gray-500">衣服Logo</th>
+                                <th class="table-header-large text-left text-gray-500">衣服型号</th>
+                                <th class="table-header-large text-left text-gray-500">性别</th>
+                                <th class="table-header-large text-left text-gray-500">尺码</th>
+                                <th class="table-header-large text-left text-gray-500">退货日期</th>
+                                <th class="table-header-large text-left text-gray-500">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordTable" class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="7" class="table-cell-large text-center text-gray-500">请输入条件后点击查询</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- 删除确认模态框 -->
+<div id="deleteModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 class="text-xl font-semibold text-gray-800 mb-4 text-center">确认删除</h3>
+        <p class="text-gray-600 mb-8 text-center text-lg">确定要删除这条退货记录吗？删除后无法恢复。</p>
+        <div class="flex justify-center gap-6">
+            <button id="cancelDelete" class="modal-btn border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 hover:border-gray-400">
+                取消
+            </button>
+            <button id="confirmDelete" class="modal-btn bg-danger text-white hover:bg-red-600 hover:shadow-lg">
+                确认删除
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 提示框 -->
+<div id="toast" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-md shadow-lg z-50 hidden transition-all duration-300 transform translate-x-0"></div>
+
+<script>
+    let records = JSON.parse(localStorage.getItem('clothingReturns')) || [];
+    let maxSerialNumber = 0; // 初始化默认值
+    let currentDeleteId = null;
+    let logoSuggestionsTimeout = null;
+
+    window.onload = function () {
+        // 初始化最大序号：优先从localStorage读取，无则从记录中计算，都无则为0
+        const storedMax = localStorage.getItem('maxSerialNumber');
+        if (storedMax) {
+            maxSerialNumber = parseInt(storedMax);
+        } else if (records.length > 0) {
+            // 从现有记录中提取最大货品编号
+            const goodsNos = records.map(r => parseInt(r.goodsNo));
+            maxSerialNumber = Math.max(...goodsNos);
+        } else {
+            maxSerialNumber = 0; // 无记录时初始化为0
+        }
+
+        document.getElementById('returnDate').value = new Date().toISOString().split('T')[0];
+        initGoodsNo(); // 初始化默认货品编号
+        document.getElementById('addForm').onsubmit = function (e) {
+            e.preventDefault();
+            addRecord();
+        };
+        document.getElementById('cancelDelete').onclick = hideDeleteModal;
+        document.getElementById('confirmDelete').onclick = confirmDeleteRecord;
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) hideDeleteModal();
+        });
+        updateStats();
+        updateModelOptions(); // 初始化型号下拉框
+        // 绑定Logo联想选择事件
+        document.getElementById('logoSuggestions').addEventListener('click', function(e) {
+            if (e.target.tagName === 'LI') {
+                document.getElementById('queryLogo').value = e.target.textContent;
+                hideLogoSuggestions(0);
+            }
+        });
+    };
+
+    // 切换标签页 - 核心：统一菜单样式逻辑
+    function switchTab(tab) {
+        document.getElementById('addPage').style.display = tab === 'add' ? 'block' : 'none';
+        document.getElementById('queryPage').style.display = tab === 'query' ? 'block' : 'none';
+        document.getElementById('pageTitle').innerText = tab === 'add' ? '添加退货记录' : '查询退货记录';
+        
+        const addItem = document.querySelector('aside a[href="#add"]');
+        const queryItem = document.querySelector('aside a[href="#query"]');
+        
+        // 统一样式规则：
+        // 选中项（焦点）：bg-navActive（蓝色） + text-white
+        // 未选中项（非焦点）：bg-navInactive（灰色） + text-gray-100 + hover效果
+        if (tab === 'add') {
+            // 添加记录为焦点（蓝色），查询记录为非焦点（灰色）
+            addItem.className = 'nav-item flex items-center bg-navActive text-white';
+            queryItem.className = 'nav-item flex items-center bg-navInactive text-gray-100 hover:bg-navHover hover:text-white transition-all';
+            initGoodsNo(); // 切换回添加页重新初始化默认编号
+        } else {
+            // 查询记录为焦点（蓝色），添加记录为非焦点（灰色）
+            addItem.className = 'nav-item flex items-center bg-navInactive text-gray-100 hover:bg-navHover hover:text-white transition-all';
+            queryItem.className = 'nav-item flex items-center bg-navActive text-white';
+            updateModelOptions(); // 切换到查询页时更新型号选项
+        }
+    }
+
+    // 初始化货品编号（默认值）
+    function initGoodsNo() {
+        const nextGoodsNo = (maxSerialNumber + 1).toString();
+        const goodsNoInput = document.getElementById('goodsNo');
+        goodsNoInput.value = nextGoodsNo;
+        goodsNoInput.classList.remove('error-border');
+        document.getElementById('goodsNoTip').classList.remove('error-text');
+    }
+
+    // 验证货品编号（重复/格式）
+    function validateGoodsNo() {
+        const goodsNoInput = document.getElementById('goodsNo');
+        const goodsNo = goodsNoInput.value.trim();
+        const goodsNoTip = document.getElementById('goodsNoTip');
+        
+        // 重置样式
+        goodsNoInput.classList.remove('error-border');
+        goodsNoTip.classList.remove('error-text');
+
+        // 空值验证
+        if (!goodsNo) {
+            goodsNoTip.textContent = '货品编号不能为空！';
+            goodsNoTip.classList.add('error-text');
+            goodsNoInput.classList.add('error-border');
+            return false;
+        }
+
+        // 格式验证（纯数字）
+        if (!/^\d+$/.test(goodsNo)) {
+            goodsNoTip.textContent = '货品编号必须为纯数字！';
+            goodsNoTip.classList.add('error-text');
+            goodsNoInput.classList.add('error-border');
+            return false;
+        }
+
+        // 重复验证
+        const isDuplicate = records.some(r => r.goodsNo === goodsNo);
+        if (isDuplicate) {
+            goodsNoTip.textContent = '编号已存在，请修改！';
+            goodsNoTip.classList.add('error-text');
+            goodsNoInput.classList.add('error-border');
+            return false;
+        }
+
+        // 更新最大序号（如果手动输入的编号更大）
+        const num = parseInt(goodsNo);
+        if (num > maxSerialNumber) {
+            maxSerialNumber = num;
+            localStorage.setItem('maxSerialNumber', maxSerialNumber.toString());
+        }
+
+        return true;
+    }
+
+    // 重置表单
+    function resetForm() {
+        document.getElementById('addForm').reset();
+        document.getElementById('returnDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('modelTip').classList.add('hidden');
+        // 重置错误提示
+        const goodsNoInput = document.getElementById('goodsNo');
+        goodsNoInput.classList.remove('error-border');
+        document.getElementById('goodsNoTip').classList.remove('error-text');
+        initGoodsNo(); // 重置后恢复默认编号
+    }
+
+    // 显示Logo联想提示
+    function showLogoSuggestions() {
+        const inputVal = document.getElementById('queryLogo').value.trim().toLowerCase();
+        const suggestionsList = document.getElementById('logoSuggestions');
+        suggestionsList.innerHTML = '';
+        
+        if (!inputVal) {
+            suggestionsList.classList.remove('show');
+            return;
+        }
+
+        // 获取所有已保存的Logo并去重
+        const logoSet = new Set(records.map(r => r.logo.trim()).filter(logo => logo));
+        const matchedLogos = Array.from(logoSet).filter(logo => 
+            logo.toLowerCase().includes(inputVal)
+        ).sort();
+
+        if (matchedLogos.length === 0) {
+            suggestionsList.classList.remove('show');
+            return;
+        }
+
+        // 生成联想选项
+        matchedLogos.forEach(logo => {
+            const li = document.createElement('li');
+            li.className = 'autocomplete-item';
+            li.textContent = logo;
+            suggestionsList.appendChild(li);
+        });
+
+        suggestionsList.classList.add('show');
+    }
+
+    // 隐藏Logo联想提示
+    function hideLogoSuggestions(delay) {
+        clearTimeout(logoSuggestionsTimeout);
+        logoSuggestionsTimeout = setTimeout(() => {
+            document.getElementById('logoSuggestions').classList.remove('show');
+        }, delay || 0);
+    }
+
+    // 更新型号筛选选项（从已保存记录中获取并去重）
+    function updateModelOptions() {
+        const queryModelSelect = document.getElementById('queryModel');
+        queryModelSelect.innerHTML = '<option value="">全部</option>';
+        // 提取所有非空型号并去重
+        const modelSet = new Set(records.map(r => r.model.trim()).filter(model => model));
+        const modelList = Array.from(modelSet).sort();
+        // 填充下拉选项
+        modelList.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model;
+            option.textContent = model;
+            queryModelSelect.appendChild(option);
+        });
+    }
+
+    // 自动填充型号
+    function autoFillModel() {
+        const logo = document.getElementById('logo').value.trim();
+        const gender = document.getElementById('gender').value;
+        const size = document.getElementById('size').value;
+        const modelInput = document.getElementById('model');
+        const modelTip = document.getElementById('modelTip');
+
+        modelTip.classList.add('hidden');
+        if (!logo || !gender || !size) {
+            return;
+        }
+
+        const matchedRecord = records.find(r => 
+            r.logo.trim() === logo && 
+            r.gender === gender && 
+            r.size === size
+        );
+
+        if (matchedRecord) {
+            modelInput.value = matchedRecord.model;
+            modelTip.classList.remove('hidden');
+            setTimeout(() => {
+                modelTip.classList.add('hidden');
+            }, 5000);
+        }
+    }
+
+    // 更新统计数据
+    function updateStats() {
+        const total = records.length;
+        const male = records.filter(r => r.gender === 'male').length;
+        const female = records.filter(r => r.gender === 'female').length;
+
+        document.getElementById('totalCount').innerText = total;
+        document.getElementById('maleCount').innerText = male;
+        document.getElementById('femaleCount').innerText = female;
+    }
+
+    // 添加记录
+    function addRecord() {
+        // 先验证货品编号
+        if (!validateGoodsNo()) {
+            return;
+        }
+
+        const goodsNo = document.getElementById('goodsNo').value.trim();
+        const logo = document.getElementById('logo').value.trim();
+        const model = document.getElementById('model').value.trim();
+        const gender = document.getElementById('gender').value;
+        const size = document.getElementById('size').value;
+        const returnDate = document.getElementById('returnDate').value;
+
+        // 基础必填项验证
+        if (!logo || !model || !gender || !size || !returnDate) {
+            showToast('请填写所有必填字段！');
+            return;
+        }
+
+        const record = {
+            id: Date.now(),
+            goodsNo: goodsNo,
+            logo: logo,
+            model: model,
+            gender: gender,
+            size: size,
+            returnDate: returnDate
+        };
+        records.push(record);
+        
+        localStorage.setItem('clothingReturns', JSON.stringify(records));
+        
+        updateStats();
+        updateModelOptions(); // 添加记录后更新型号选项
+        showToast('记录添加成功！');
+        
+        resetForm();
+    }
+
+    // 查询记录
+    function queryRecords() {
+        const logo = document.getElementById('queryLogo').value.trim();
+        const gender = document.getElementById('queryGender').value;
+        const size = document.getElementById('querySize').value;
+        const model = document.getElementById('queryModel').value.trim(); // 改为获取下拉框值
+
+        let filtered = records.filter(r => {
+            if (logo && !r.logo.includes(logo)) return false; // Logo模糊匹配
+            if (gender && r.gender !== gender) return false;
+            if (size && r.size !== size) return false;
+            if (model && !r.model.includes(model)) return false; // 型号模糊匹配
+            return true;
+        });
+
+        const table = document.getElementById('recordTable');
+        table.innerHTML = '';
+        if (filtered.length === 0) {
+            table.innerHTML = '<tr><td colspan="7" class="table-cell-large text-center text-gray-500">暂无符合条件的记录</td></tr>';
+            return;
+        }
+
+        filtered.forEach((r) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="table-cell-large font-medium">${r.goodsNo}</td>
+                <td class="table-cell-large">${r.logo}</td>
+                <td class="table-cell-large">${r.model}</td>
+                <td class="table-cell-large">${r.gender === 'male' ? '男性' : '女性'}</td>
+                <td class="table-cell-large">${r.size}</td>
+                <td class="table-cell-large">${formatDate(r.returnDate)}</td>
+                <td class="table-cell-large">
+                    <button onclick="showDeleteModal(${r.id})" class="text-danger hover:text-red-700 text-lg">
+                        <i class="fa fa-trash"></i> 删除
+                    </button>
+                </td>
+            `;
+            table.appendChild(tr);
+        });
+    }
+
+    // 显示删除弹窗
+    function showDeleteModal(id) {
+        currentDeleteId = id;
+        const modal = document.getElementById('deleteModal');
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        document.body.style.paddingRight = '17px';
+    }
+
+    // 隐藏删除弹窗
+    function hideDeleteModal() {
+        currentDeleteId = null;
+        const modal = document.getElementById('deleteModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+        document.body.style.paddingRight = '0';
+    }
+
+    // 确认删除
+    function confirmDeleteRecord() {
+        if (currentDeleteId === null) return;
+        
+        // 删除记录
+        records = records.filter(r => r.id !== currentDeleteId);
+        localStorage.setItem('clothingReturns', JSON.stringify(records));
+        
+        // 重新计算最大序号
+        if (records.length > 0) {
+            const goodsNos = records.map(r => parseInt(r.goodsNo));
+            maxSerialNumber = Math.max(...goodsNos);
+        } else {
+            maxSerialNumber = 0;
+        }
+        localStorage.setItem('maxSerialNumber', maxSerialNumber.toString());
+        
+        updateStats();
+        updateModelOptions(); // 删除记录后更新型号选项
+        queryRecords();
+        showToast('记录已删除！');
+        
+        hideDeleteModal();
+    }
+
+    // 重置查询
+    function resetQuery() {
+        document.getElementById('queryLogo').value = '';
+        document.getElementById('queryGender').value = '';
+        document.getElementById('querySize').value = '';
+        document.getElementById('queryModel').value = '';
+        document.getElementById('recordTable').innerHTML = '<tr><td colspan="7" class="table-cell-large text-center text-gray-500">请输入条件后点击查询</td></tr>';
+        hideLogoSuggestions(0);
+    }
+
+    // 格式化日期
+    function formatDate(dateStr) {
+        const d = new Date(dateStr);
+        return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,0)}-${d.getDate().toString().padStart(2,0)}`;
+    }
+
+    // 提示框
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.classList.remove('hidden');
+        toast.classList.add('translate-x-0');
+        toast.classList.remove('translate-x-full');
+        
+        setTimeout(() => {
+            toast.classList.add('translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 300);
+        }, 2000);
+    }
+</script>
+</body>
+</html>
