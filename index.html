@@ -9,7 +9,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="#1a56db">
     <meta name="apple-mobile-web-app-title" content="瑞盛服饰退货管理">
-    <link rel="apple-touch-icon" href="https://picsum.photos/192/192">
     <script>
         tailwind.config = {
             theme: {
@@ -19,9 +18,6 @@
                         danger: '#ef4444',
                         success: '#10b981',
                         warning: '#f59e0b',
-                        navActive: '#2563eb',
-                        navInactive: '#4b5563',
-                        navHover: '#374151'
                     }
                 }
             }
@@ -30,41 +26,19 @@
     <style type="text/tailwindcss">
         @layer utilities {
             .shadow-card { box-shadow: 0 2px 4px -1px rgba(0,0,0,0.1); }
-            .transition-all { transition: all 0.15s ease; }
-            .modal-overlay {
-                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                background-color: rgba(0, 0, 0, 0.5);
-                display: flex; justify-content: center; align-items: center;
-                z-index: 9999; opacity: 0; visibility: hidden;
-                transition: opacity 0.3s ease, visibility 0.3s ease;
-            }
-            .modal-overlay.active { opacity: 1; visibility: visible; }
-            .modal-content {
-                background-color: white; border-radius: 8px; padding: 1.5rem;
-                width: 90%; max-width: 350px; box-shadow: 0 8px 16px -4px rgba(0,0,0,0.2);
-                transform: translateY(-20px); opacity: 0;
-                transition: transform 0.3s ease, opacity 0.3s ease;
-            }
-            .modal-overlay.active .modal-content { transform: translateY(0); opacity: 1; }
-            .modal-btn { padding: 0.75rem 1.5rem; border-radius: 6px; font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; min-width: 100px; }
-            /* 手机端导航样式 */
             .mobile-nav { display: flex; gap: 2px; margin-bottom: 1rem; }
             .mobile-nav-btn { flex: 1; padding: 0.75rem 1rem; text-align: center; border-radius: 4px; font-weight: 500; transition: all 0.2s; font-size: 0.9rem; }
             .mobile-nav-btn.active { background-color: #2563eb; color: white; }
             .mobile-nav-btn.inactive { background-color: #4b5563; color: #f3f4f6; }
-            /* 表单样式优化 */
             .form-label { font-size: 0.85rem; margin-bottom: 0.5rem; }
             .form-input { font-size: 0.9rem; padding: 0.75rem !important; }
             .form-row { margin-bottom: 1rem !important; }
-            /* 表格样式（适配手机无滑动） */
             .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
             .data-table th { background-color: #f9fafb; padding: 0.75rem 0.5rem; text-align: left; font-weight: 600; font-size: 0.8rem; border-bottom: 2px solid #e5e7eb; }
             .data-table td { padding: 0.75rem 0.5rem; border-bottom: 1px solid #e5e7eb; }
             .action-btn { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
-            /* 错误提示 */
             .error-border { border-color: #ef4444 !important; }
             .error-text { color: #ef4444 !important; display: block !important; font-size: 0.75rem; margin-top: 0.25rem; }
-            /* 自动补全 */
             .autocomplete-container { position: relative; width: 100%; }
             .autocomplete-list {
                 position: absolute; top: 100%; left: 0; right: 0; max-height: 150px;
@@ -75,17 +49,27 @@
             .autocomplete-list.show { display: block; }
             .autocomplete-item { padding: 0.5rem 0.75rem; cursor: pointer; }
             .autocomplete-item:hover { background-color: #f3f4f6; }
+            .modal-overlay {
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center;
+                z-index: 9999; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+            }
+            .modal-overlay.active { opacity: 1; visibility: visible; }
+            .modal-content {
+                background-color: white; border-radius: 8px; padding: 1.5rem;
+                width: 90%; max-width: 350px; box-shadow: 0 8px 16px -4px rgba(0,0,0,0.2);
+                transform: translateY(-20px); opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease;
+            }
+            .modal-overlay.active .modal-content { transform: translateY(0); opacity: 1; }
+            .modal-btn { padding: 0.75rem 1.5rem; border-radius: 6px; font-size: 1rem; font-weight: 500; cursor: pointer; min-width: 100px; }
         }
     </style>
 </head>
 <body class="bg-gray-50 font-sans">
 <div class="flex h-screen overflow-hidden flex-col">
-    <!-- 手机端导航（优先显示） -->
     <header class="bg-white shadow-sm p-3 sticky top-0 z-10">
         <div class="flex flex-col">
             <h2 id="pageTitle" class="text-lg font-semibold text-gray-800 mb-1 text-center">添加退货记录</h2>
-            
-            <!-- 导航切换按钮 -->
             <div class="mobile-nav">
                 <button id="mobileAddBtn" class="mobile-nav-btn active" onclick="switchTab('add')">
                     <i class="fa fa-plus-circle mr-1"></i> 添加记录
@@ -94,8 +78,6 @@
                     <i class="fa fa-search mr-1"></i> 查询记录
                 </button>
             </div>
-
-            <!-- 统计数据 -->
             <div class="flex gap-2 mt-1">
                 <div class="px-2 py-1 bg-primary/10 rounded-lg text-center flex-1">
                     <p class="text-xs text-gray-500">总记录</p><p class="text-base font-bold text-primary" id="mobileTotalCount">0</p>
@@ -111,32 +93,23 @@
     </header>
 
     <main class="flex-1 overflow-y-auto pb-4">
-        <!-- 添加记录页面 -->
         <div id="addPage" class="p-3 block">
             <div class="bg-white rounded-lg shadow-card p-3">
                 <h3 class="text-base font-semibold mb-3 text-center">添加退货记录</h3>
                 <form id="addForm" class="space-y-2">
-                    <!-- 货品编号 -->
                     <div class="form-row">
                         <label class="block form-label font-medium text-gray-700">货品编号 <span class="text-danger">*</span></label>
-                        <input type="text" id="goodsNo" placeholder="自动生成/输入数字" class="w-full form-input border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" oninput="validateGoodsNo()">
-                        <p id="goodsNoTip" class="error-text hidden">编号已存在，请修改！</p>
-                        <p class="text-xs text-gray-400 mt-1">编号规则：纯数字，不可重复</p>
+                        <input type="text" id="goodsNo" placeholder="自动生成" class="w-full form-input border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" oninput="validateGoodsNo()">
+                        <p id="goodsNoTip" class="error-text hidden">编号已存在！</p>
                     </div>
-
-                    <!-- Logo -->
                     <div class="form-row">
                         <label class="block form-label font-medium text-gray-700">衣服Logo <span class="text-danger">*</span></label>
                         <input type="text" id="logo" placeholder="例如：Nike" required class="w-full form-input border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" onblur="autoFillModel()">
                     </div>
-
-                    <!-- 型号 -->
                     <div class="form-row">
                         <label class="block form-label font-medium text-gray-700">衣服型号 <span class="text-danger">*</span></label>
                         <input type="text" id="model" placeholder="例如：2024款短袖" required class="w-full form-input border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
                     </div>
-
-                    <!-- 性别+尺码 一行显示 -->
                     <div class="grid grid-cols-2 gap-2 form-row">
                         <div>
                             <label class="block form-label font-medium text-gray-700">性别 <span class="text-danger">*</span></label>
@@ -157,8 +130,6 @@
                             </select>
                         </div>
                     </div>
-
-                    <!-- 提交按钮 -->
                     <div class="flex justify-end gap-2 mt-4">
                         <button type="reset" class="px-3 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 font-medium text-sm" onclick="resetForm()">重置</button>
                         <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 font-medium text-sm">保存记录</button>
@@ -167,12 +138,9 @@
             </div>
         </div>
 
-        <!-- 查询记录页面 -->
         <div id="queryPage" class="p-3 hidden">
             <div class="bg-white rounded-lg shadow-card p-3">
                 <h3 class="text-base font-semibold mb-3 text-center">查询退货记录</h3>
-                
-                <!-- 查询条件（紧凑布局） -->
                 <div class="grid grid-cols-2 gap-2 mb-3">
                     <div>
                         <label class="block form-label font-medium text-gray-700">衣服Logo</label>
@@ -206,14 +174,10 @@
                         </select>
                     </div>
                 </div>
-
-                <!-- 查询按钮 -->
                 <div class="flex justify-end gap-2 mb-3">
                     <button onclick="resetQuery()" class="px-3 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 font-medium text-sm">重置</button>
                     <button onclick="queryRecords()" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 font-medium text-sm"><i class="fa fa-search mr-1"></i>查询</button>
                 </div>
-
-                <!-- 数据表格（适配手机无滑动） -->
                 <div class="overflow-x-hidden">
                     <table class="data-table">
                         <thead>
@@ -238,7 +202,6 @@
     </main>
 </div>
 
-<!-- 删除确认弹窗 -->
 <div id="deleteModal" class="modal-overlay">
     <div class="modal-content">
         <h3 class="text-lg font-semibold text-gray-800 mb-3 text-center">确认删除</h3>
@@ -250,321 +213,210 @@
     </div>
 </div>
 
-<!-- 提示弹窗 -->
 <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50 hidden text-sm text-center">操作成功</div>
 
 <script>
-    let records = JSON.parse(localStorage.getItem('clothingReturns')) || [];
-    let maxSerialNumber = 0;
-    let currentDeleteId = null;
+const DATA_KEY = "returnRecords";
+const MAX_ID_KEY = "maxGoodsNo";
 
-    window.onload = function () {
-        // 初始化最大编号
-        const storedMax = localStorage.getItem('maxSerialNumber');
-        if (storedMax) {
-            maxSerialNumber = parseInt(storedMax);
-        } else if (records.length > 0) {
-            const goodsNos = records.map(r => parseInt(r.goodsNo));
-            maxSerialNumber = Math.max(...goodsNos);
-        } else {
-            maxSerialNumber = 0;
-        }
-        
-        // 初始化表单
-        initGoodsNo();
-        document.getElementById('addForm').onsubmit = function (e) { 
-            e.preventDefault(); 
-            addRecord(); 
-        };
-        
-        // 绑定弹窗事件
-        document.getElementById('cancelDelete').onclick = hideDeleteModal;
-        document.getElementById('confirmDelete').onclick = confirmDeleteRecord;
-        
-        // 更新统计和下拉选项
-        updateStats();
-        updateModelOptions();
-    };
-
-    // 切换页面
-    function switchTab(tab) {
-        // 切换页面显示
-        document.getElementById('addPage').style.display = tab === 'add' ? 'block' : 'none';
-        document.getElementById('queryPage').style.display = tab === 'query' ? 'block' : 'none';
-        document.getElementById('pageTitle').innerText = tab === 'add' ? '添加退货记录' : '查询退货记录';
-        
-        // 切换导航按钮样式
-        if (tab === 'add') {
-            document.getElementById('mobileAddBtn').className = 'mobile-nav-btn active';
-            document.getElementById('mobileQueryBtn').className = 'mobile-nav-btn inactive';
-        } else {
-            document.getElementById('mobileAddBtn').className = 'mobile-nav-btn inactive';
-            document.getElementById('mobileQueryBtn').className = 'mobile-nav-btn active';
-        }
-        
-        if (tab === 'add') initGoodsNo();
+function loadRecords() {
+    let str = localStorage.getItem(DATA_KEY);
+    if (!str) return [];
+    try {
+        return JSON.parse(str);
+    } catch (e) {
+        return [];
     }
+}
 
-    // 初始化货品编号
-    function initGoodsNo() {
-        const next = (maxSerialNumber + 1).toString();
-        const inp = document.getElementById('goodsNo');
-        inp.value = next;
-        inp.classList.remove('error-border');
-        document.getElementById('goodsNoTip').classList.remove('error-text');
+function saveRecords(records) {
+    localStorage.setItem(DATA_KEY, JSON.stringify(records));
+}
+
+function getMaxId() {
+    return parseInt(localStorage.getItem(MAX_ID_KEY) || "0");
+}
+
+function setMaxId(n) {
+    localStorage.setItem(MAX_ID_KEY, n);
+}
+
+let records = loadRecords();
+let maxSerialNumber = getMaxId();
+let currentDeleteId = null;
+
+window.onload = function () {
+    initGoodsNo();
+    document.getElementById('addForm').onsubmit = e => { e.preventDefault(); addRecord(); };
+    document.getElementById('cancelDelete').onclick = hideDeleteModal;
+    document.getElementById('confirmDelete').onclick = confirmDeleteRecord;
+    updateStats();
+    updateModelOptions();
+};
+
+function switchTab(tab) {
+    document.getElementById('addPage').style.display = tab === 'add' ? 'block' : 'none';
+    document.getElementById('queryPage').style.display = tab === 'query' ? 'block' : 'none';
+    document.getElementById('pageTitle').innerText = tab === 'add' ? '添加退货记录' : '查询退货记录';
+    if (tab === 'add') {
+        document.getElementById('mobileAddBtn').className = 'mobile-nav-btn active';
+        document.getElementById('mobileQueryBtn').className = 'mobile-nav-btn inactive';
+    } else {
+        document.getElementById('mobileAddBtn').className = 'mobile-nav-btn inactive';
+        document.getElementById('mobileQueryBtn').className = 'mobile-nav-btn active';
     }
+    if (tab === 'add') initGoodsNo();
+}
 
-    // 验证货品编号
-    function validateGoodsNo() {
-        const inp = document.getElementById('goodsNo');
-        const v = inp.value.trim();
-        const tip = document.getElementById('goodsNoTip');
-        
-        inp.classList.remove('error-border');
-        tip.classList.remove('error-text');
-        
-        if (!v) {
-            tip.textContent = '货品编号不能为空！';
-            tip.classList.add('error-text');
-            inp.classList.add('error-border');
-            return false;
-        }
-        
-        if (!/^\d+$/.test(v)) {
-            tip.textContent = '必须是纯数字！';
-            tip.classList.add('error-text');
-            inp.classList.add('error-border');
-            return false;
-        }
-        
-        const has = records.some(x => x.goodsNo === v);
-        if (has) {
-            tip.textContent = '编号已存在！';
-            tip.classList.add('error-text');
-            inp.classList.add('error-border');
-            return false;
-        }
-        
-        const num = parseInt(v);
-        if (num > maxSerialNumber) {
-            maxSerialNumber = num;
-            localStorage.setItem('maxSerialNumber', maxSerialNumber);
-        }
+function initGoodsNo() {
+    const next = (maxSerialNumber + 1).toString();
+    const inp = document.getElementById('goodsNo');
+    inp.value = next;
+    inp.classList.remove('error-border');
+    document.getElementById('goodsNoTip').classList.remove('error-text');
+}
+
+function validateGoodsNo() {
+    const inp = document.getElementById('goodsNo');
+    const v = inp.value.trim();
+    const tip = document.getElementById('goodsNoTip');
+    inp.classList.remove('error-border');
+    tip.classList.remove('error-text');
+    if (!v) { tip.textContent = '货品编号不能为空！'; tip.classList.add('error-text'); inp.classList.add('error-border'); return false; }
+    if (!/^\d+$/.test(v)) { tip.textContent = '必须是纯数字！'; tip.classList.add('error-text'); inp.classList.add('error-border'); return false; }
+    const has = records.some(x => x.goodsNo === v);
+    if (has) { tip.textContent = '编号已存在！'; tip.classList.add('error-text'); inp.classList.add('error-border'); return false; }
+    const num = parseInt(v);
+    if (num > maxSerialNumber) { maxSerialNumber = num; setMaxId(maxSerialNumber); }
+    return true;
+}
+
+function resetForm() {
+    document.getElementById('addForm').reset();
+    initGoodsNo();
+}
+
+function updateStats() {
+    const total = records.length;
+    const male = records.filter(x => x.gender === 'male').length;
+    const female = records.filter(x => x.gender === 'female').length;
+    document.getElementById('mobileTotalCount').innerText = total;
+    document.getElementById('mobileMaleCount').innerText = male;
+    document.getElementById('mobileFemaleCount').innerText = female;
+}
+
+function addRecord() {
+    if (!validateGoodsNo()) return;
+    const goodsNo = document.getElementById('goodsNo').value.trim();
+    const logo = document.getElementById('logo').value.trim();
+    const model = document.getElementById('model').value.trim();
+    const gender = document.getElementById('gender').value;
+    const size = document.getElementById('size').value;
+    if (!logo || !model || !gender || !size) { showToast('请填写完整信息'); return; }
+    records.push({ id: Date.now(), goodsNo, logo, model, gender, size });
+    saveRecords(records);
+    updateStats();
+    updateModelOptions();
+    showToast('保存成功');
+    resetForm();
+}
+
+function queryRecords() {
+    const logo = document.getElementById('queryLogo').value.trim();
+    const gender = document.getElementById('queryGender').value;
+    const size = document.getElementById('querySize').value;
+    const model = document.getElementById('queryModel').value;
+    let list = records.filter(r => {
+        if (logo && !r.logo.includes(logo)) return false;
+        if (gender && r.gender !== gender) return false;
+        if (size && r.size !== size) return false;
+        if (model && r.model !== model) return false;
         return true;
-    }
+    });
+    const tb = document.getElementById('recordTable');
+    tb.innerHTML = '';
+    if (list.length === 0) { tb.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500 py-4">暂无数据</td></tr>'; return; }
+    list.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${r.goodsNo}</td>
+            <td>${r.logo}</td>
+            <td>${r.model}</td>
+            <td>${r.gender === 'male' ? '男' : '女'}</td>
+            <td>${r.size}</td>
+            <td><button onclick="showDeleteModal(${r.id})" class="text-danger action-btn"><i class="fa fa-trash"></i> 删除</button></td>
+        `;
+        tb.appendChild(tr);
+    });
+}
 
-    // 重置表单
-    function resetForm() {
-        document.getElementById('addForm').reset();
-        initGoodsNo();
-    }
+function showDeleteModal(id) { currentDeleteId = id; document.getElementById('deleteModal').classList.add('active'); }
+function hideDeleteModal() { currentDeleteId = null; document.getElementById('deleteModal').classList.remove('active'); }
 
-    // 更新统计数据
-    function updateStats() {
-        const total = records.length;
-        const male = records.filter(x => x.gender === 'male').length;
-        const female = records.filter(x => x.gender === 'female').length;
-        
-        // 更新手机端统计
-        document.getElementById('mobileTotalCount').innerText = total;
-        document.getElementById('mobileMaleCount').innerText = male;
-        document.getElementById('mobileFemaleCount').innerText = female;
-    }
+function confirmDeleteRecord() {
+    records = records.filter(x => x.id !== currentDeleteId);
+    saveRecords(records);
+    if (records.length > 0) { maxSerialNumber = Math.max(...records.map(x => parseInt(x.goodsNo))); } else { maxSerialNumber = 0; }
+    setMaxId(maxSerialNumber);
+    updateStats();
+    updateModelOptions();
+    queryRecords();
+    hideDeleteModal();
+    showToast('删除成功');
+}
 
-    // 添加记录
-    function addRecord() {
-        if (!validateGoodsNo()) return;
-        
-        const goodsNo = document.getElementById('goodsNo').value.trim();
-        const logo = document.getElementById('logo').value.trim();
-        const model = document.getElementById('model').value.trim();
-        const gender = document.getElementById('gender').value;
-        const size = document.getElementById('size').value;
-        
-        if (!logo || !model || !gender || !size) {
-            showToast('请填写完整信息');
-            return;
-        }
-        
-        // 添加记录（移除时间字段）
-        records.push({ 
-            id: Date.now(), 
-            goodsNo, 
-            logo, 
-            model, 
-            gender, 
-            size 
-        });
-        
-        // 保存到本地存储
-        localStorage.setItem('clothingReturns', JSON.stringify(records));
-        
-        // 更新状态
-        updateStats();
-        updateModelOptions();
-        showToast('保存成功');
-        resetForm();
-    }
+function resetQuery() {
+    document.getElementById('queryLogo').value = '';
+    document.getElementById('queryGender').value = '';
+    document.getElementById('querySize').value = '';
+    document.getElementById('queryModel').value = '';
+    document.getElementById('recordTable').innerHTML = '<tr><td colspan="6" class="text-center text-gray-500 py-4">请输入条件后查询</td></tr>';
+}
 
-    // 查询记录
-    function queryRecords() {
-        const logo = document.getElementById('queryLogo').value.trim();
-        const gender = document.getElementById('queryGender').value;
-        const size = document.getElementById('querySize').value;
-        const model = document.getElementById('queryModel').value;
-        
-        // 过滤数据
-        let list = records.filter(r => {
-            if (logo && !r.logo.includes(logo)) return false;
-            if (gender && r.gender !== gender) return false;
-            if (size && r.size !== size) return false;
-            if (model && r.model !== model) return false;
-            return true;
-        });
-        
-        const tb = document.getElementById('recordTable');
-        tb.innerHTML = '';
-        
-        if (list.length === 0) {
-            tb.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500 py-4">暂无数据</td></tr>';
-            return;
-        }
-        
-        // 渲染表格
-        list.forEach(r => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${r.goodsNo}</td>
-                <td>${r.logo}</td>
-                <td>${r.model}</td>
-                <td>${r.gender === 'male' ? '男' : '女'}</td>
-                <td>${r.size}</td>
-                <td><button onclick="showDeleteModal(${r.id})" class="text-danger action-btn"><i class="fa fa-trash"></i> 删除</button></td>
-            `;
-            tb.appendChild(tr);
-        });
-    }
+function updateModelOptions() {
+    const sel = document.getElementById('queryModel');
+    sel.innerHTML = '<option value="">全部</option>';
+    const s = new Set(records.map(x => x.model).filter(Boolean));
+    Array.from(s).sort().forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; sel.appendChild(o); });
+}
 
-    // 显示删除弹窗
-    function showDeleteModal(id) { 
-        currentDeleteId = id; 
-        document.getElementById('deleteModal').classList.add('active'); 
-    }
+function autoFillModel() {
+    const logo = document.getElementById('logo').value.trim();
+    const gender = document.getElementById('gender').value;
+    const size = document.getElementById('size').value;
+    if (!logo || !gender || !size) return;
+    const r = records.find(x => x.logo === logo && x.gender === gender && x.size === size);
+    if (r) document.getElementById('model').value = r.model;
+}
 
-    // 隐藏删除弹窗
-    function hideDeleteModal() { 
-        currentDeleteId = null; 
-        document.getElementById('deleteModal').classList.remove('active'); 
-    }
+function showLogoSuggestions() {
+    const v = document.getElementById('queryLogo').value.trim().toLowerCase();
+    const ul = document.getElementById('logoSuggestions');
+    ul.innerHTML = '';
+    if (!v) { ul.classList.remove('show'); return; }
+    const s = new Set(records.map(x => x.logo).filter(Boolean));
+    const list = Array.from(s).filter(x => x.toLowerCase().includes(v)).sort();
+    if (list.length === 0) { ul.classList.remove('show'); return; }
+    list.forEach(x => {
+        const li = document.createElement('li');
+        li.className = 'autocomplete-item';
+        li.textContent = x;
+        li.onclick = () => { document.getElementById('queryLogo').value = x; ul.classList.remove('show'); };
+        ul.appendChild(li);
+    });
+    ul.classList.add('show');
+}
 
-    // 确认删除
-    function confirmDeleteRecord() {
-        records = records.filter(x => x.id !== currentDeleteId);
-        localStorage.setItem('clothingReturns', JSON.stringify(records));
-        
-        // 更新最大编号
-        if (records.length > 0) {
-            maxSerialNumber = Math.max(...records.map(x => parseInt(x.goodsNo)));
-        } else {
-            maxSerialNumber = 0;
-        }
-        localStorage.setItem('maxSerialNumber', maxSerialNumber);
-        
-        // 更新状态
-        updateStats();
-        updateModelOptions();
-        queryRecords();
-        hideDeleteModal();
-        showToast('删除成功');
-    }
+function hideLogoSuggestions(delay) {
+    setTimeout(() => document.getElementById('logoSuggestions').classList.remove('show'), delay);
+}
 
-    // 重置查询
-    function resetQuery() {
-        document.getElementById('queryLogo').value = '';
-        document.getElementById('queryGender').value = '';
-        document.getElementById('querySize').value = '';
-        document.getElementById('queryModel').value = '';
-        document.getElementById('recordTable').innerHTML = '<tr><td colspan="6" class="text-center text-gray-500 py-4">请输入条件后查询</td></tr>';
-    }
-
-    // 更新型号下拉选项
-    function updateModelOptions() {
-        const sel = document.getElementById('queryModel');
-        sel.innerHTML = '<option value="">全部</option>';
-        
-        const modelSet = new Set(records.map(x => x.model).filter(Boolean));
-        Array.from(modelSet).sort().forEach(m => {
-            const o = document.createElement('option');
-            o.value = m; 
-            o.textContent = m;
-            sel.appendChild(o);
-        });
-    }
-
-    // 自动填充型号
-    function autoFillModel() {
-        const logo = document.getElementById('logo').value.trim();
-        const gender = document.getElementById('gender').value;
-        const size = document.getElementById('size').value;
-        
-        if (!logo || !gender || !size) return;
-        
-        const matchRecord = records.find(x => x.logo === logo && x.gender === gender && x.size === size);
-        if (matchRecord) {
-            document.getElementById('model').value = matchRecord.model;
-        }
-    }
-
-    // 显示Logo建议
-    function showLogoSuggestions() {
-        const v = document.getElementById('queryLogo').value.trim().toLowerCase();
-        const ul = document.getElementById('logoSuggestions');
-        ul.innerHTML = '';
-        
-        if (!v) { 
-            ul.classList.remove('show'); 
-            return; 
-        }
-        
-        const logoSet = new Set(records.map(x => x.logo).filter(Boolean));
-        const suggestions = Array.from(logoSet).filter(x => x.toLowerCase().includes(v)).sort();
-        
-        if (suggestions.length === 0) { 
-            ul.classList.remove('show'); 
-            return; 
-        }
-        
-        suggestions.forEach(x => {
-            const li = document.createElement('li');
-            li.className = 'autocomplete-item';
-            li.textContent = x;
-            li.onclick = function() {
-                document.getElementById('queryLogo').value = x;
-                ul.classList.remove('show');
-            };
-            ul.appendChild(li);
-        });
-        
-        ul.classList.add('show');
-    }
-
-    // 隐藏Logo建议
-    function hideLogoSuggestions(delay) {
-        setTimeout(() => {
-            document.getElementById('logoSuggestions').classList.remove('show');
-        }, delay);
-    }
-
-    // 显示提示
-    function showToast(msg) {
-        const toast = document.getElementById('toast');
-        toast.innerText = msg;
-        toast.classList.remove('hidden');
-        
-        setTimeout(() => {
-            toast.classList.add('hidden');
-        }, 2000);
-    }
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.classList.remove('hidden');
+    setTimeout(() => t.classList.add('hidden'), 2000);
+}
 </script>
 </body>
 </html>
