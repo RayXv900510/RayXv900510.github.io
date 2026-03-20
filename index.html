@@ -29,7 +29,7 @@
             .mobile-nav { display: flex; gap: 2px; margin-bottom: 1rem; }
             .mobile-nav-btn { flex: 1; padding: 0.75rem 1rem; text-align: center; border-radius: 4px; font-weight: 500; transition: all 0.2s; font-size: 0.9rem; }
             .mobile-nav-btn.active { background-color: #2563eb; color: white; }
-            .mobile-nav-btn.inactive { background-color: #4b5563; color: #f3f4f6; }
+            .mobile-nav-btn.inactive { background-color: #4b5563; color: #f3f6f9; }
             .form-label { font-size: 0.85rem; margin-bottom: 0.5rem; }
             .form-input { font-size: 0.9rem; padding: 0.75rem !important; }
             .form-row { margin-bottom: 1rem !important; }
@@ -123,10 +123,19 @@
                             <label class="block form-label font-medium text-gray-700">尺码 <span class="text-danger">*</span></label>
                             <select id="size" required class="w-full form-input border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
                                 <option value="">请选择</option>
-                                <option value="35">35</option><option value="36">36</option><option value="37">37</option>
-                                <option value="38">38</option><option value="39">39</option><option value="40">40</option>
-                                <option value="41">41</option><option value="42">42</option><option value="43">43</option>
+                                <option value="35">35</option>
+                                <option value="36">36</option>
+                                <option value="37">37</option>
+                                <option value="38">38</option>
+                                <option value="39">39</option>
+                                <option value="40">40</option>
+                                <option value="41">41</option>
+                                <option value="42">42</option>
+                                <option value="43">43</option>
                                 <option value="44">44</option>
+                                <option value="45">45</option>
+                                <option value="46">46</option>
+                                <option value="47">47</option>
                             </select>
                         </div>
                     </div>
@@ -161,10 +170,19 @@
                         <label class="block form-label font-medium text-gray-700">尺码</label>
                         <select id="querySize" class="w-full form-input border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
                             <option value="">全部</option>
-                            <option value="35">35</option><option value="36">36</option><option value="37">37</option>
-                            <option value="38">38</option><option value="39">39</option><option value="40">40</option>
-                            <option value="41">41</option><option value="42">42</option><option value="43">43</option>
+                            <option value="35">35</option>
+                            <option value="36">36</option>
+                            <option value="37">37</option>
+                            <option value="38">38</option>
+                            <option value="39">39</option>
+                            <option value="40">40</option>
+                            <option value="41">41</option>
+                            <option value="42">42</option>
+                            <option value="43">43</option>
                             <option value="44">44</option>
+                            <option value="45">45</option>
+                            <option value="46">46</option>
+                            <option value="47">47</option>
                         </select>
                     </div>
                     <div>
@@ -222,21 +240,14 @@ const MAX_ID_KEY = "maxGoodsNo";
 function loadRecords() {
     let str = localStorage.getItem(DATA_KEY);
     if (!str) return [];
-    try {
-        return JSON.parse(str);
-    } catch (e) {
-        return [];
-    }
+    try { return JSON.parse(str); } catch (e) { return []; }
 }
-
 function saveRecords(records) {
     localStorage.setItem(DATA_KEY, JSON.stringify(records));
 }
-
 function getMaxId() {
     return parseInt(localStorage.getItem(MAX_ID_KEY) || "0");
 }
-
 function setMaxId(n) {
     localStorage.setItem(MAX_ID_KEY, n);
 }
