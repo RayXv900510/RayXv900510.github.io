@@ -1,36 +1,47 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>退货管理</title>
+<title>瑞盛服饰退货管理</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#f5f7fa;font-family:Arial}
-.head{background:white;padding:12px;position:sticky;top:0}
-.title{text-align:center;font-weight:bold;margin-bottom:8px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f5f7fa;font-family:Arial}
+.head{background:white;padding:12px;position:sticky;top:0;z-index:10;box-shadow:0 1px 3px #eee}
+.title{text-align:center;font-weight:bold;font-size:17px;margin-bottom:8px}
 .nav{display:flex;gap:6px;margin-bottom:10px}
-.navbtn{flex:1;padding:10px;border:none;border-radius:6px;background:#e5e7eb}
+.navbtn{flex:1;padding:10px;border:none;border-radius:6px;background:#e5e7eb;font-size:14px}
 .navbtn.active{background:#2563eb;color:white}
 .stats{display:flex;gap:6px}
 .stat{flex:1;background:#eef2ff;padding:8px;border-radius:6px;text-align:center}
 .stat .l{font-size:12px;color:#666}
-.stat .n{font-weight:bold}
+.stat .n{font-weight:bold;font-size:16px}
 .page{padding:12px}
-.card{background:white;border-radius:10px;padding:14px}
+.card{background:white;border-radius:10px;padding:14px;box-shadow:0 2px 5px #eee}
 .item{margin-bottom:12px}
 .label{font-size:14px;margin-bottom:4px}
-.input{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px}
+.input{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px}
 .row{display:flex;gap:8px}
 .col{flex:1}
 .btns{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
-.btn{padding:8px 14px;border-radius:6px;border:none}
+.btn{padding:8px 14px;border-radius:6px;border:none;font-size:14px}
 .btn1{background:#2563eb;color:white}
 .table{width:100%;border-collapse:collapse;margin-top:12px}
 .table th{background:#f9fafb;padding:8px;text-align:left;font-size:13px}
 .table td{padding:8px;border-bottom:1px solid #eee;font-size:14px}
-.del{color:red;border:none;background:none}
+.del{color:red;border:none;background:none;cursor:pointer}
 #queryPage{display:none}
+.loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.8);display:flex;justify-content:center;align-items:center;z-index:999;display:none}
+.loading span{background:white;padding:15px 20px;border-radius:8px;display:flex;align-items:center;gap:8px}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#10b981;color:white;padding:10px 20px;border-radius:6px;z-index:999;display:none}
 </style>
+
+<!-- 加载提示 -->
+<div class="loading" id="loading">
+  <span><i class="fa fa-spinner fa-spin"></i> 同步数据中...</span>
+</div>
+<!-- 提示框 -->
+<div class="toast" id="toast"></div>
 
 <div class="head">
   <div class="title">退货管理</div>
@@ -49,7 +60,7 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
 <div class="card">
   <div class="item">
     <div class="label">货品编号</div>
-    <input class="input" id="goodsNo">
+    <input class="input" id="goodsNo" placeholder="自动生成/手动修改">
   </div>
   <div class="item">
     <div class="label">Logo</div>
@@ -112,42 +123,70 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
 </div>
 
 <script>
-const KEY = "return_data_sync";
+// 免费公共云端接口（已配置好，无需修改）
+const API_URL = "https://664d0c685425580055bfe07a.mockapi.io/returnManage/records";
+let allRecords = [];
 
-function getAll() {
+// 显示加载提示
+function showLoading() { document.getElementById('loading').style.display = 'flex'; }
+// 隐藏加载提示
+function hideLoading() { document.getElementById('loading').style.display = 'none'; }
+// 显示提示框
+function showToast(msg, isError = false) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.style.background = isError ? '#ef4444' : '#10b981';
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 2000);
+}
+
+// 从云端加载所有记录
+async function loadRecords() {
+  showLoading();
   try {
-    return JSON.parse(localStorage.getItem(KEY)) || [];
-  } catch {
-    return [];
+    const res = await axios.get(API_URL);
+    allRecords = res.data || [];
+    refreshStat();
+    autoGoodsNo();
+    if (document.getElementById('queryPage').style.display === 'block') render();
+  } catch (e) {
+    showToast('同步数据失败，使用本地数据', true);
+    allRecords = JSON.parse(localStorage.getItem('backup_data') || '[]');
+  } finally {
+    hideLoading();
   }
 }
 
-function saveAll(arr) {
-  localStorage.setItem(KEY, JSON.stringify(arr));
-}
-
+// 更新统计数据
 function refreshStat() {
-  const arr = getAll();
-  document.getElementById("total").innerText = arr.length;
-  document.getElementById("male").innerText = arr.filter(x => x.gender == "male").length;
-  document.getElementById("female").innerText = arr.filter(x => x.gender == "female").length;
+  document.getElementById("total").innerText = allRecords.length;
+  document.getElementById("male").innerText = allRecords.filter(x => x.gender == "male").length;
+  document.getElementById("female").innerText = allRecords.filter(x => x.gender == "female").length;
+  // 备份到本地，防止网络问题
+  localStorage.setItem('backup_data', JSON.stringify(allRecords));
 }
 
+// 自动生成货品编号
 function autoGoodsNo() {
-  const arr = getAll();
-  if (arr.length === 0) return "1";
-  return Math.max(...arr.map(x => parseInt(x.goodsNo || 0))) + 1 + "";
+  if (allRecords.length === 0) {
+    document.getElementById("goodsNo").value = "1";
+    return;
+  }
+  const maxNo = Math.max(...allRecords.map(x => parseInt(x.goodsNo || 0)));
+  document.getElementById("goodsNo").value = (maxNo + 1).toString();
 }
 
+// 重置添加表单
 function resetAdd() {
   document.getElementById("logo").value = "";
   document.getElementById("model").value = "";
   document.getElementById("gender").value = "";
   document.getElementById("size").value = "";
-  document.getElementById("goodsNo").value = autoGoodsNo();
+  autoGoodsNo();
 }
 
-function save() {
+// 保存记录到云端
+async function save() {
   const goodsNo = document.getElementById("goodsNo").value.trim();
   const logo = document.getElementById("logo").value.trim();
   const model = document.getElementById("model").value.trim();
@@ -155,27 +194,61 @@ function save() {
   const size = document.getElementById("size").value;
 
   if (!goodsNo || !logo || !model || !gender || !size) {
-    alert("请填写完整");
+    showToast('请填写完整信息', true);
     return;
   }
 
-  let arr = getAll();
-  arr = arr.filter(x => x.goodsNo != goodsNo);
-  arr.push({ goodsNo, logo, model, gender, size });
-  saveAll(arr);
-  refreshStat();
-  resetAdd();
-  alert("保存成功！");
+  showLoading();
+  try {
+    // 先删除同名编号（防止重复）
+    const oldRecord = allRecords.find(x => x.goodsNo === goodsNo);
+    if (oldRecord && oldRecord.id) {
+      await axios.delete(`${API_URL}/${oldRecord.id}`);
+    }
+    // 添加新记录
+    const newRecord = { goodsNo, logo, model, gender, size };
+    if (oldRecord && oldRecord.id) {
+      await axios.put(`${API_URL}/${oldRecord.id}`, newRecord);
+    } else {
+      await axios.post(API_URL, newRecord);
+    }
+    // 重新加载数据
+    await loadRecords();
+    resetAdd();
+    showToast('保存成功！');
+  } catch (e) {
+    showToast('保存失败，请重试', true);
+  } finally {
+    hideLoading();
+  }
 }
 
+// 删除云端记录
+async function delRecord(goodsNo) {
+  if (!confirm("确定删除？删除后无法恢复")) return;
+  showLoading();
+  try {
+    const record = allRecords.find(x => x.goodsNo === goodsNo);
+    if (record && record.id) {
+      await axios.delete(`${API_URL}/${record.id}`);
+    }
+    await loadRecords();
+    showToast('删除成功！');
+  } catch (e) {
+    showToast('删除失败，请重试', true);
+  } finally {
+    hideLoading();
+  }
+}
+
+// 渲染查询表格
 function render() {
-  const arr = getAll();
   const qLogo = document.getElementById("qLogo").value.toLowerCase();
   const qGender = document.getElementById("qGender").value;
   const qSize = document.getElementById("qSize").value;
   const qModel = document.getElementById("qModel").value.toLowerCase();
 
-  const list = arr.filter(x => {
+  const list = allRecords.filter(x => {
     if (qLogo && !x.logo.toLowerCase().includes(qLogo)) return false;
     if (qGender && x.gender != qGender) return false;
     if (qSize && x.size != qSize) return false;
@@ -191,22 +264,14 @@ function render() {
       <td>${x.model}</td>
       <td>${x.gender=="male"?"男":"女"}</td>
       <td>${x.size}</td>
-      <td><button class="del" onclick="del('${x.goodsNo}')">删除</button></td>
+      <td><button class="del" onclick="delRecord('${x.goodsNo}')">删除</button></td>
     </tr>`;
   });
   if (!list.length) html = '<tr><td colspan="6" align="center">无数据</td></tr>';
   document.getElementById("tb").innerHTML = html;
 }
 
-function del(goodsNo) {
-  if (!confirm("确定删除？")) return;
-  let arr = getAll();
-  arr = arr.filter(x => x.goodsNo != goodsNo);
-  saveAll(arr);
-  refreshStat();
-  render();
-}
-
+// 重置查询表单
 function resetQuery() {
   document.getElementById("qLogo").value = "";
   document.getElementById("qGender").value = "";
@@ -215,6 +280,7 @@ function resetQuery() {
   render();
 }
 
+// 切换页面
 function go(page) {
   document.getElementById("addPage").style.display = page == "add" ? "block" : "none";
   document.getElementById("queryPage").style.display = page == "query" ? "block" : "none";
@@ -224,8 +290,9 @@ function go(page) {
   if (page == "query") render();
 }
 
+// 页面加载时初始化
 window.onload = function () {
-  refreshStat();
+  loadRecords();
   resetAdd();
 };
 </script>
