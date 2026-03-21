@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>瑞盛货品管理</title>
+<title>货品管理-GitHub同步版</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f5f7fa;font-family:Arial}
@@ -29,10 +29,11 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
 .table td{padding:8px;border-bottom:1px solid #eee;font-size:14px}
 .del{color:red;border:none;background:none}
 #queryPage{display:none}
+.debug{padding:8px;text-align:center;color:#666;font-size:12px;background:#f8f9fa}
 </style>
 
 <div class="head">
-  <div class="title">瑞盛货品管理</div>
+  <div class="title">货品管理</div>
   <div class="nav">
     <button class="navbtn active" onclick="go('add')">添加</button>
     <button class="navbtn" onclick="go('query')">查询</button>
@@ -42,6 +43,7 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
     <div class="stat"><div class="l">男款</div><div class="n" id="male">0</div></div>
     <div class="stat"><div class="l">女款</div><div class="n" id="female">0</div></div>
   </div>
+  <div class="debug" id="debugText">加载中...</div>
 </div>
 
 <div id="addPage" class="page">
@@ -102,6 +104,7 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
   <div class="btns">
     <button class="btn" onclick="resetQuery()">重置</button>
     <button class="btn btn1" onclick="render()">查询</button>
+    <button class="btn btn1" onclick="refreshFromGitHub()">手动刷新</button>
   </div>
   <table class="table">
     <thead><tr><th>编号</th><th>品牌</th><th>型号</th><th>性别</th><th>尺码</th><th>操作</th></tr></thead>
@@ -111,17 +114,25 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
 </div>
 
 <script>
-// ========== 这里需要你修改成自己的信息 ==========
-const GITHUB_TOKEN = "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"; // 替换成你生成的Token
-const REPO_OWNER = "RayXv900510";    // 比如：username123
-const REPO_NAME = "RayXv900510.github.io";           // 比如：goods-manage
-// =============================================
+// ========== 你的配置 ==========
+const GITHUB_TOKEN = "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";
+const REPO_OWNER = "RayXv900510";
+const REPO_NAME = "RayXv900510.github.io";
+// =============================
 
 let allData = [];
-let fileSha = ""; // 用于GitHub文件更新
+let fileSha = "";
+const debugEl = document.getElementById("debugText");
 
-// 从GitHub读取data.json
+// 调试日志
+function log(msg) {
+  debugEl.innerText = msg;
+  console.log("[调试]", msg);
+}
+
+// 从GitHub读取data.json（带详细调试）
 async function loadFromGitHub() {
+  log("开始读取GitHub数据...");
   try {
     const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/data.json`, {
       headers: {
@@ -130,25 +141,37 @@ async function loadFromGitHub() {
       }
     });
     
+    log(`响应状态：${res.status}`);
     if (res.ok) {
       const data = await res.json();
       fileSha = data.sha;
       allData = JSON.parse(atob(data.content));
+      log(`读取成功！共${allData.length}条记录`);
+    } else if (res.status === 404) {
+      log("data.json不存在，创建空数据");
+      allData = [];
+      fileSha = "";
     } else {
+      const err = await res.text();
+      log(`读取失败：${err}`);
       allData = [];
     }
   } catch (e) {
-    console.error("读取失败:", e);
+    log(`读取异常：${e.message}`);
     allData = [];
   }
   refreshStat();
   autoNo();
+  if (document.getElementById("queryPage").style.display === "block") {
+    render();
+  }
 }
 
-// 保存到GitHub的data.json
+// 保存到GitHub的data.json（带详细调试）
 async function saveToGitHub() {
+  log("开始保存到GitHub...");
   try {
-    await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/data.json`, {
+    const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/data.json`, {
       method: "PUT",
       headers: {
         "Authorization": `token ${GITHUB_TOKEN}`,
@@ -157,13 +180,29 @@ async function saveToGitHub() {
       },
       body: JSON.stringify({
         message: "更新货品数据",
-        content: btoa(JSON.stringify(allData)),
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(allData)))), // 修复中文编码
         sha: fileSha
       })
     });
+
+    log(`保存响应状态：${res.status}`);
+    if (res.ok) {
+      const data = await res.json();
+      fileSha = data.content.sha;
+      log("保存成功！数据已同步到GitHub");
+    } else {
+      const err = await res.text();
+      log(`保存失败：${err}`);
+    }
   } catch (e) {
-    console.error("保存失败:", e);
+    log(`保存异常：${e.message}`);
   }
+}
+
+// 手动刷新数据
+async function refreshFromGitHub() {
+  await loadFromGitHub();
+  render();
 }
 
 function refreshStat() {
@@ -196,7 +235,10 @@ async function save() {
   const gender = document.getElementById("gender").value;
   const size = document.getElementById("size").value;
 
-  if (!goodsNo || !logo || !model || !gender || !size) return;
+  if (!goodsNo || !logo || !model || !gender || !size) {
+    log("请填写完整信息！");
+    return;
+  }
 
   // 去重 + 添加新记录
   allData = allData.filter(x => x.goodsNo !== goodsNo);
@@ -266,4 +308,3 @@ window.onload = async function() {
   await loadFromGitHub();
 };
 </script>
-</html>
