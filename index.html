@@ -1,53 +1,41 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>瑞盛服饰退货管理</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>瑞盛服饰货品管理</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#f5f7fa;font-family:Arial}
-.head{background:white;padding:12px;position:sticky;top:0;z-index:10;box-shadow:0 1px 3px #eee}
-.title{text-align:center;font-weight:bold;font-size:17px;margin-bottom:8px}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f7f9;font-family:Arial}
+.head{background:#fff;padding:12px;position:sticky;top:0}
+.title{text-align:center;font-weight:bold;margin-bottom:8px}
 .nav{display:flex;gap:6px;margin-bottom:10px}
-.navbtn{flex:1;padding:10px;border:none;border-radius:6px;background:#e5e7eb;font-size:14px}
-.navbtn.active{background:#2563eb;color:white}
+.btn{flex:1;padding:10px;border:none;border-radius:6px;background:#eee}
+.btn.active{background:#2563eb;color:#fff}
 .stats{display:flex;gap:6px}
 .stat{flex:1;background:#eef2ff;padding:8px;border-radius:6px;text-align:center}
 .stat .l{font-size:12px;color:#666}
-.stat .n{font-weight:bold;font-size:16px}
+.stat .n{font-weight:bold}
 .page{padding:12px}
-.card{background:white;border-radius:10px;padding:14px;box-shadow:0 2px 5px #eee}
+.card{background:#fff;border-radius:10px;padding:14px}
 .item{margin-bottom:12px}
 .label{font-size:14px;margin-bottom:4px}
-.input{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px}
+.input{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px}
 .row{display:flex;gap:8px}
 .col{flex:1}
 .btns{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
-.btn{padding:8px 14px;border-radius:6px;border:none;font-size:14px}
-.btn1{background:#2563eb;color:white}
+.button{padding:8px 14px;border-radius:6px;border:none}
+.primary{background:#2563eb;color:#fff}
 .table{width:100%;border-collapse:collapse;margin-top:12px}
 .table th{background:#f9fafb;padding:8px;text-align:left;font-size:13px}
 .table td{padding:8px;border-bottom:1px solid #eee;font-size:14px}
-.del{color:red;border:none;background:none;cursor:pointer}
+.del{color:red;border:none;background:none}
 #queryPage{display:none}
-.loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.8);display:flex;justify-content:center;align-items:center;z-index:999;display:none}
-.loading span{background:white;padding:15px 20px;border-radius:8px;display:flex;align-items:center;gap:8px}
-.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#10b981;color:white;padding:10px 20px;border-radius:6px;z-index:999;display:none}
 </style>
 
-<!-- 加载提示 -->
-<div class="loading" id="loading">
-  <span><i class="fa fa-spinner fa-spin"></i> 同步数据中...</span>
-</div>
-<!-- 提示框 -->
-<div class="toast" id="toast"></div>
-
 <div class="head">
-  <div class="title">退货管理</div>
+  <div class="title">瑞盛服饰货品管理</div>
   <div class="nav">
-    <button class="navbtn active" onclick="go('add')">添加</button>
-    <button class="navbtn" onclick="go('query')">查询</button>
+    <button class="btn active" onclick="go('add')">添加</button>
+    <button class="btn" onclick="go('query')">查询</button>
   </div>
   <div class="stats">
     <div class="stat"><div class="l">总记录</div><div class="n" id="total">0</div></div>
@@ -60,15 +48,15 @@ body{background:#f5f7fa;font-family:Arial}
 <div class="card">
   <div class="item">
     <div class="label">货品编号</div>
-    <input class="input" id="goodsNo" placeholder="自动生成/手动修改">
+    <input class="input" id="goodsNo">
   </div>
   <div class="item">
-    <div class="label">Logo</div>
-    <input class="input" id="logo" placeholder="如：Nike">
+    <div class="label">品牌</div>
+    <input class="input" id="logo">
   </div>
   <div class="item">
     <div class="label">型号</div>
-    <input class="input" id="model" placeholder="如：2025款">
+    <input class="input" id="model">
   </div>
   <div class="row">
     <div class="col item">
@@ -90,8 +78,8 @@ body{background:#f5f7fa;font-family:Arial}
     </div>
   </div>
   <div class="btns">
-    <button class="btn" onclick="resetAdd()">重置</button>
-    <button class="btn btn1" onclick="save()">保存</button>
+    <button class="button" onclick="resetAdd()">重置</button>
+    <button class="button primary" onclick="save()">保存到云端</button>
   </div>
 </div>
 </div>
@@ -99,7 +87,7 @@ body{background:#f5f7fa;font-family:Arial}
 <div id="queryPage" class="page">
 <div class="card">
   <div class="row">
-    <div class="col item"><div class="label">Logo</div><input class="input" id="qLogo"></div>
+    <div class="col item"><div class="label">品牌</div><input class="input" id="qLogo"></div>
     <div class="col item"><div class="label">性别</div><select class="input" id="qGender"><option value="">全部</option><option value="male">男</option><option value="female">女</option></select></div>
   </div>
   <div class="row" style="margin-top:8px">
@@ -112,80 +100,64 @@ body{background:#f5f7fa;font-family:Arial}
     <div class="col item"><div class="label">型号</div><input class="input" id="qModel"></div>
   </div>
   <div class="btns">
-    <button class="btn" onclick="resetQuery()">重置</button>
-    <button class="btn btn1" onclick="render()">查询</button>
+    <button class="button" onclick="resetQuery()">重置</button>
+    <button class="button primary" onclick="render()">刷新查询</button>
   </div>
   <table class="table">
-    <thead><tr><th>编号</th><th>Logo</th><th>型号</th><th>性别</th><th>尺码</th><th>操作</th></tr></thead>
+    <thead><tr><th>编号</th><th>品牌</th><th>型号</th><th>性别</th><th>尺码</th><th>操作</th></tr></thead>
     <tbody id="tb"></tbody>
   </table>
 </div>
 </div>
 
 <script>
-// 免费公共云端接口（已配置好，无需修改）
-const API_URL = "https://664d0c685425580055bfe07a.mockapi.io/returnManage/records";
-let allRecords = [];
+// 唯一标识：你可以改成自己的名字，防止和别人冲突
+const USER_ID = "my_goods_data_123";
 
-// 显示加载提示
-function showLoading() { document.getElementById('loading').style.display = 'flex'; }
-// 隐藏加载提示
-function hideLoading() { document.getElementById('loading').style.display = 'none'; }
-// 显示提示框
-function showToast(msg, isError = false) {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.style.background = isError ? '#ef4444' : '#10b981';
-  toast.style.display = 'block';
-  setTimeout(() => toast.style.display = 'none', 2000);
-}
-
-// 从云端加载所有记录
-async function loadRecords() {
-  showLoading();
+// 从云端（免费公共同步服务）获取数据
+async function cloudGet() {
   try {
-    const res = await axios.get(API_URL);
-    allRecords = res.data || [];
-    refreshStat();
-    autoGoodsNo();
-    if (document.getElementById('queryPage').style.display === 'block') render();
+    let res = await fetch("https://api.pyapi.cn/sync/get?key=" + USER_ID);
+    let data = await res.json();
+    return data.data ? JSON.parse(data.data) : [];
   } catch (e) {
-    showToast('同步数据失败，使用本地数据', true);
-    allRecords = JSON.parse(localStorage.getItem('backup_data') || '[]');
-  } finally {
-    hideLoading();
+    return [];
   }
 }
 
-// 更新统计数据
-function refreshStat() {
-  document.getElementById("total").innerText = allRecords.length;
-  document.getElementById("male").innerText = allRecords.filter(x => x.gender == "male").length;
-  document.getElementById("female").innerText = allRecords.filter(x => x.gender == "female").length;
-  // 备份到本地，防止网络问题
-  localStorage.setItem('backup_data', JSON.stringify(allRecords));
+// 保存到云端
+async function cloudSet(arr) {
+  try {
+    await fetch("https://api.pyapi.cn/sync/set?key=" + USER_ID + "&value=" + encodeURIComponent(JSON.stringify(arr)));
+  } catch (e) {}
 }
 
-// 自动生成货品编号
-function autoGoodsNo() {
-  if (allRecords.length === 0) {
-    document.getElementById("goodsNo").value = "1";
-    return;
-  }
-  const maxNo = Math.max(...allRecords.map(x => parseInt(x.goodsNo || 0)));
-  document.getElementById("goodsNo").value = (maxNo + 1).toString();
+// 初始化加载
+async function init() {
+  window.allData = await cloudGet();
+  refresh();
+  resetAdd();
 }
 
-// 重置添加表单
+function refresh() {
+  document.getElementById("total").innerText = allData.length;
+  document.getElementById("male").innerText = allData.filter(x => x.gender == "male").length;
+  document.getElementById("female").innerText = allData.filter(x => x.gender == "female").length;
+}
+
+function autoNo() {
+  if (!allData.length) return "1";
+  return Math.max(...allData.map(x => +x.goodsNo)) + 1 + "";
+}
+
 function resetAdd() {
   document.getElementById("logo").value = "";
   document.getElementById("model").value = "";
   document.getElementById("gender").value = "";
   document.getElementById("size").value = "";
-  autoGoodsNo();
+  document.getElementById("goodsNo").value = autoNo();
 }
 
-// 保存记录到云端
 async function save() {
   const goodsNo = document.getElementById("goodsNo").value.trim();
   const logo = document.getElementById("logo").value.trim();
@@ -194,61 +166,31 @@ async function save() {
   const size = document.getElementById("size").value;
 
   if (!goodsNo || !logo || !model || !gender || !size) {
-    showToast('请填写完整信息', true);
+    alert("请填写完整");
     return;
   }
 
-  showLoading();
-  try {
-    // 先删除同名编号（防止重复）
-    const oldRecord = allRecords.find(x => x.goodsNo === goodsNo);
-    if (oldRecord && oldRecord.id) {
-      await axios.delete(`${API_URL}/${oldRecord.id}`);
-    }
-    // 添加新记录
-    const newRecord = { goodsNo, logo, model, gender, size };
-    if (oldRecord && oldRecord.id) {
-      await axios.put(`${API_URL}/${oldRecord.id}`, newRecord);
-    } else {
-      await axios.post(API_URL, newRecord);
-    }
-    // 重新加载数据
-    await loadRecords();
-    resetAdd();
-    showToast('保存成功！');
-  } catch (e) {
-    showToast('保存失败，请重试', true);
-  } finally {
-    hideLoading();
-  }
+  allData = allData.filter(x => x.goodsNo != goodsNo);
+  allData.push({ goodsNo, logo, model, gender, size });
+  await cloudSet(allData);
+  resetAdd();
+  alert("保存成功！已同步到云端");
 }
 
-// 删除云端记录
-async function delRecord(goodsNo) {
-  if (!confirm("确定删除？删除后无法恢复")) return;
-  showLoading();
-  try {
-    const record = allRecords.find(x => x.goodsNo === goodsNo);
-    if (record && record.id) {
-      await axios.delete(`${API_URL}/${record.id}`);
-    }
-    await loadRecords();
-    showToast('删除成功！');
-  } catch (e) {
-    showToast('删除失败，请重试', true);
-  } finally {
-    hideLoading();
-  }
+async function del(no) {
+  if (!confirm("确定删除？")) return;
+  allData = allData.filter(x => x.goodsNo != no);
+  await cloudSet(allData);
+  render();
 }
 
-// 渲染查询表格
 function render() {
   const qLogo = document.getElementById("qLogo").value.toLowerCase();
   const qGender = document.getElementById("qGender").value;
   const qSize = document.getElementById("qSize").value;
   const qModel = document.getElementById("qModel").value.toLowerCase();
 
-  const list = allRecords.filter(x => {
+  const list = allData.filter(x => {
     if (qLogo && !x.logo.toLowerCase().includes(qLogo)) return false;
     if (qGender && x.gender != qGender) return false;
     if (qSize && x.size != qSize) return false;
@@ -264,14 +206,13 @@ function render() {
       <td>${x.model}</td>
       <td>${x.gender=="male"?"男":"女"}</td>
       <td>${x.size}</td>
-      <td><button class="del" onclick="delRecord('${x.goodsNo}')">删除</button></td>
+      <td><button class="del" onclick="del('${x.goodsNo}')">删除</button></td>
     </tr>`;
   });
   if (!list.length) html = '<tr><td colspan="6" align="center">无数据</td></tr>';
   document.getElementById("tb").innerHTML = html;
 }
 
-// 重置查询表单
 function resetQuery() {
   document.getElementById("qLogo").value = "";
   document.getElementById("qGender").value = "";
@@ -280,20 +221,14 @@ function resetQuery() {
   render();
 }
 
-// 切换页面
 function go(page) {
   document.getElementById("addPage").style.display = page == "add" ? "block" : "none";
   document.getElementById("queryPage").style.display = page == "query" ? "block" : "none";
-  document.querySelectorAll(".navbtn").forEach((btn, i) => {
+  document.querySelectorAll(".btn").forEach((btn, i) => {
     btn.classList.toggle("active", i == (page == "add" ? 0 : 1));
   });
   if (page == "query") render();
 }
 
-// 页面加载时初始化
-window.onload = function () {
-  loadRecords();
-  resetAdd();
-};
+window.onload = init;
 </script>
-</html>
