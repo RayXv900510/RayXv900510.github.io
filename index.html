@@ -34,13 +34,13 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
 <div class="head">
   <div class="title">瑞盛货品管理</div>
   <div class="nav">
-    <button class="nav-btn active" onclick="go('add')">添加</button>
-    <button class="nav-btn" onclick="go('query')">查询</button>
+    <button class="navbtn active" onclick="go('add')">添加</button>
+    <button class="navbtn" onclick="go('query')">查询</button>
   </div>
   <div class="stats">
-    <div class="stat"><div class="l">总记录</div><div class="num" id="total">0</div></div>
-    <div class="stat"><div class="l">男款</div><div class="num" id="male">0</div></div>
-    <div class="stat"><div class="l">女款</div><div class="num" id="female">0</div></div>
+    <div class="stat"><div class="l">总记录</div><div class="n" id="total">0</div></div>
+    <div class="stat"><div class="l">男款</div><div class="n" id="male">0</div></div>
+    <div class="stat"><div class="l">女款</div><div class="n" id="female">0</div></div>
   </div>
 </div>
 
@@ -100,58 +100,73 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
     <div class="col item"><div class="label">型号</div><input class="input" id="qModel"></div>
   </div>
   <div class="btns">
-    <button class="btn" onclick="loadData()">刷新</button>
-    <button class="btn btn1" onclick="search()">查询</button>
+    <button class="btn" onclick="resetQuery()">重置</button>
+    <button class="btn btn1" onclick="render()">查询</button>
   </div>
   <table class="table">
     <thead><tr><th>编号</th><th>品牌</th><th>型号</th><th>性别</th><th>尺码</th><th>操作</th></tr></thead>
-    <tbody id="list"></tbody>
+    <tbody id="tb"></tbody>
   </table>
 </div>
 </div>
 
 <script>
-let allData = [];
-const URL = "https://api.npoint.io/3ecc2cfd40e70f8887ad";
+// ========== 这里需要你修改成自己的信息 ==========
+const GITHUB_TOKEN = "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"; // 替换成你生成的Token
+const REPO_OWNER = "RayXv900510";    // 比如：username123
+const REPO_NAME = "RayXv900510.github.io";           // 比如：goods-manage
+// =============================================
 
-async function loadData() {
+let allData = [];
+let fileSha = ""; // 用于GitHub文件更新
+
+// 从GitHub读取data.json
+async function loadFromGitHub() {
   try {
-    const res = await fetch(URL);
-    allData = await res.json() || [];
-  } catch (e) { allData = []; }
-  render();
-  stat();
+    const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/data.json`, {
+      headers: {
+        "Authorization": `token ${GITHUB_TOKEN}`,
+        "Accept": "application/vnd.github.v3+json"
+      }
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      fileSha = data.sha;
+      allData = JSON.parse(atob(data.content));
+    } else {
+      allData = [];
+    }
+  } catch (e) {
+    console.error("读取失败:", e);
+    allData = [];
+  }
+  refreshStat();
   autoNo();
 }
 
-async function saveData(data) {
+// 保存到GitHub的data.json
+async function saveToGitHub() {
   try {
-    await fetch(URL, {
+    await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/data.json`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
+      headers: {
+        "Authorization": `token ${GITHUB_TOKEN}`,
+        "Accept": "application/vnd.github.v3+json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: "更新货品数据",
+        content: btoa(JSON.stringify(allData)),
+        sha: fileSha
+      })
     });
-  } catch (e) {}
+  } catch (e) {
+    console.error("保存失败:", e);
+  }
 }
 
-function render() {
-  const list = document.getElementById("list");
-  list.innerHTML = "";
-  allData.forEach(item => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${item.goodsNo}</td>
-      <td>${item.logo}</td>
-      <td>${item.model}</td>
-      <td>${item.gender=="male"?"男":"女"}</td>
-      <td>${item.size}</td>
-      <td><button class="del" onclick="del('${item.goodsNo}')">删除</button></td>
-    `;
-    list.appendChild(tr);
-  });
-}
-
-function stat() {
+function refreshStat() {
   document.getElementById("total").innerText = allData.length;
   document.getElementById("male").innerText = allData.filter(x=>x.gender=="male").length;
   document.getElementById("female").innerText = allData.filter(x=>x.gender=="female").length;
@@ -162,8 +177,16 @@ function autoNo() {
     document.getElementById("goodsNo").value = "1";
     return;
   }
-  const max = Math.max(...allData.map(x => +x.goodsNo || 0));
-  document.getElementById("goodsNo").value = max + 1;
+  const maxNo = Math.max(...allData.map(x => +x.goodsNo || 0));
+  document.getElementById("goodsNo").value = (maxNo + 1).toString();
+}
+
+function resetAdd() {
+  document.getElementById("logo").value = "";
+  document.getElementById("model").value = "";
+  document.getElementById("gender").value = "";
+  document.getElementById("size").value = "";
+  autoNo();
 }
 
 async function save() {
@@ -175,72 +198,72 @@ async function save() {
 
   if (!goodsNo || !logo || !model || !gender || !size) return;
 
-  const exist = allData.findIndex(x => x.goodsNo == goodsNo);
-  if (exist >= 0) allData.splice(exist, 1);
+  // 去重 + 添加新记录
+  allData = allData.filter(x => x.goodsNo !== goodsNo);
   allData.push({ goodsNo, logo, model, gender, size });
-
-  await saveData(allData);
+  
+  // 保存到GitHub + 刷新统计
+  await saveToGitHub();
+  refreshStat();
   resetAdd();
-  loadData();
 }
 
 async function del(goodsNo) {
-  allData = allData.filter(x => x.goodsNo != goodsNo);
-  await saveData(allData);
-  loadData();
+  allData = allData.filter(x => x.goodsNo !== goodsNo);
+  await saveToGitHub();
+  render();
+  refreshStat();
 }
 
-function resetAdd() {
-  document.getElementById("logo").value = "";
-  document.getElementById("model").value = "";
-  document.getElementById("gender").value = "";
-  document.getElementById("size").value = "";
-  autoNo();
-}
-
-function search() {
+function render() {
   const qLogo = document.getElementById("qLogo").value.toLowerCase();
   const qGender = document.getElementById("qGender").value;
   const qSize = document.getElementById("qSize").value;
   const qModel = document.getElementById("qModel").value.toLowerCase();
 
-  const list = document.getElementById("list");
-  list.innerHTML = "";
-
-  const filtered = allData.filter(item => {
-    if (qLogo && !item.logo.toLowerCase().includes(qLogo)) return false;
-    if (qGender && item.gender != qGender) return false;
-    if (qSize && item.size != qSize) return false;
-    if (qModel && !item.model.toLowerCase().includes(qModel)) return false;
+  const list = allData.filter(x=>{
+    if (qLogo && !x.logo.toLowerCase().includes(qLogo)) return false;
+    if (qGender && x.gender !== qGender) return false;
+    if (qSize && x.size !== qSize) return false;
+    if (qModel && !x.model.toLowerCase().includes(qModel)) return false;
     return true;
   });
 
-  filtered.forEach(item => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${item.goodsNo}</td>
-      <td>${item.logo}</td>
-      <td>${item.model}</td>
-      <td>${item.gender=="male"?"男":"女"}</td>
-      <td>${item.size}</td>
-      <td><button class="del" onclick="del('${item.goodsNo}')">删除</button></td>
-    `;
-    list.appendChild(tr);
+  let html = "";
+  list.forEach(x=>{
+    html += `<tr>
+      <td>${x.goodsNo}</td>
+      <td>${x.logo}</td>
+      <td>${x.model}</td>
+      <td>${x.gender=="male"?"男":"女"}</td>
+      <td>${x.size}</td>
+      <td><button class="del" onclick="del('${x.goodsNo}')">删除</button></td>
+    </tr>`;
   });
+  if (!list.length) html = '<tr><td colspan="6" align="center">无数据</td></tr>';
+  document.getElementById("tb").innerHTML = html;
+}
+
+function resetQuery() {
+  document.getElementById("qLogo").value = "";
+  document.getElementById("qGender").value = "";
+  document.getElementById("qSize").value = "";
+  document.getElementById("qModel").value = "";
+  render();
 }
 
 function go(page) {
-  document.getElementById("addPage").style.display = page == "add" ? "block" : "none";
-  document.getElementById("queryPage").style.display = page == "query" ? "block" : "none";
-  const btns = document.querySelectorAll(".nav-btn");
-  btns[0].classList.toggle("active", page == "add");
-  btns[1].classList.toggle("active", page == "query");
-  if (page == "query") loadData();
+  document.getElementById("addPage").style.display = page=="add"?"block":"none";
+  document.getElementById("queryPage").style.display = page=="query"?"block":"none";
+  document.querySelectorAll(".navbtn").forEach((btn,i)=>{
+    btn.classList.toggle("active", i==(page=="add"?0:1));
+  });
+  if (page == "query") render();
 }
 
-window.onload = () => {
-  loadData();
-  resetAdd();
+// 页面加载时读取GitHub数据
+window.onload = async function() {
+  await loadFromGitHub();
 };
 </script>
 </html>
