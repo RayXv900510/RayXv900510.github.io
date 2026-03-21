@@ -34,13 +34,13 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
 <div class="head">
   <div class="title">瑞盛货品管理</div>
   <div class="nav">
-    <button class="navbtn active" onclick="go('add')">添加</button>
-    <button class="navbtn" onclick="go('query')">查询</button>
+    <button class="nav-btn active" onclick="go('add')">添加</button>
+    <button class="nav-btn" onclick="go('query')">查询</button>
   </div>
   <div class="stats">
-    <div class="stat"><div class="l">总记录</div><div class="n" id="total">0</div></div>
-    <div class="stat"><div class="l">男款</div><div class="n" id="male">0</div></div>
-    <div class="stat"><div class="l">女款</div><div class="n" id="female">0</div></div>
+    <div class="stat"><div class="l">总记录</div><div class="num" id="total">0</div></div>
+    <div class="stat"><div class="l">男款</div><div class="num" id="male">0</div></div>
+    <div class="stat"><div class="l">女款</div><div class="num" id="female">0</div></div>
   </div>
 </div>
 
@@ -100,31 +100,33 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
     <div class="col item"><div class="label">型号</div><input class="input" id="qModel"></div>
   </div>
   <div class="btns">
-    <button class="btn" onclick="resetQuery()">重置</button>
-    <button class="btn btn1" onclick="render()">查询</button>
+    <button class="btn" onclick="loadData()">刷新</button>
+    <button class="btn btn1" onclick="search()">查询</button>
   </div>
   <table class="table">
     <thead><tr><th>编号</th><th>品牌</th><th>型号</th><th>性别</th><th>尺码</th><th>操作</th></tr></thead>
-    <tbody id="tb"></tbody>
+    <tbody id="list"></tbody>
   </table>
 </div>
 </div>
 
 <script>
-const SHARE_KEY = "common_data";
+let allData = [];
+const URL = "https://api.npoint.io/3ecc2cfd40e70f8887ad";
 
-async function getCloud() {
+async function loadData() {
   try {
-    let res = await fetch("https://api.npoint.io/3ecc2cfd40e70f8887ad");
-    return await res.json() || [];
-  } catch (e) {
-    return [];
-  }
+    const res = await fetch(URL);
+    allData = await res.json() || [];
+  } catch (e) { allData = []; }
+  render();
+  stat();
+  autoNo();
 }
 
-async function setCloud(data) {
+async function saveData(data) {
   try {
-    await fetch("https://api.npoint.io/3ecc2cfd40e70f8887ad", {
+    await fetch(URL, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
@@ -133,38 +135,35 @@ async function setCloud(data) {
 }
 
 function render() {
-  getCloud().then(arr => {
-    const qLogo = document.getElementById("qLogo").value.toLowerCase();
-    const qGender = document.getElementById("qGender").value;
-    const qSize = document.getElementById("qSize").value;
-    const qModel = document.getElementById("qModel").value.toLowerCase();
-
-    const list = arr.filter(x => {
-      if (qLogo && !x.logo?.toLowerCase().includes(qLogo)) return false;
-      if (qGender && x.gender != qGender) return false;
-      if (qSize && x.size != qSize) return false;
-      if (qModel && !x.model?.toLowerCase().includes(qModel)) return false;
-      return true;
-    });
-
-    let html = "";
-    list.forEach(x => {
-      html += `<tr>
-        <td>${x.goodsNo}</td>
-        <td>${x.logo}</td>
-        <td>${x.model}</td>
-        <td>${x.gender=="male"?"男":"女"}</td>
-        <td>${x.size}</td>
-        <td><button class="del" onclick="del('${x.goodsNo}')">删除</button></td>
-      </tr>`;
-    });
-    if (!list.length) html = '<tr><td colspan="6" align="center">无数据</td></tr>';
-    document.getElementById("tb").innerHTML = html;
-
-    document.getElementById("total").innerText = arr.length;
-    document.getElementById("male").innerText = arr.filter(x=>x.gender=="male").length;
-    document.getElementById("female").innerText = arr.filter(x=>x.gender=="female").length;
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+  allData.forEach(item => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${item.goodsNo}</td>
+      <td>${item.logo}</td>
+      <td>${item.model}</td>
+      <td>${item.gender=="male"?"男":"女"}</td>
+      <td>${item.size}</td>
+      <td><button class="del" onclick="del('${item.goodsNo}')">删除</button></td>
+    `;
+    list.appendChild(tr);
   });
+}
+
+function stat() {
+  document.getElementById("total").innerText = allData.length;
+  document.getElementById("male").innerText = allData.filter(x=>x.gender=="male").length;
+  document.getElementById("female").innerText = allData.filter(x=>x.gender=="female").length;
+}
+
+function autoNo() {
+  if (!allData.length) {
+    document.getElementById("goodsNo").value = "1";
+    return;
+  }
+  const max = Math.max(...allData.map(x => +x.goodsNo || 0));
+  document.getElementById("goodsNo").value = max + 1;
 }
 
 async function save() {
@@ -176,29 +175,19 @@ async function save() {
 
   if (!goodsNo || !logo || !model || !gender || !size) return;
 
-  let data = await getCloud();
-  data = data.filter(x => x.goodsNo != goodsNo);
-  data.push({ goodsNo, logo, model, gender, size });
-  await setCloud(data);
+  const exist = allData.findIndex(x => x.goodsNo == goodsNo);
+  if (exist >= 0) allData.splice(exist, 1);
+  allData.push({ goodsNo, logo, model, gender, size });
+
+  await saveData(allData);
   resetAdd();
+  loadData();
 }
 
 async function del(goodsNo) {
-  let data = await getCloud();
-  data = data.filter(x => x.goodsNo != goodsNo);
-  await setCloud(data);
-  render();
-}
-
-function autoNo() {
-  getCloud().then(arr => {
-    if (!arr.length) {
-      document.getElementById("goodsNo").value = "1";
-      return;
-    }
-    const max = Math.max(...arr.map(x => +x.goodsNo || 0));
-    document.getElementById("goodsNo").value = (max + 1).toString();
-  });
+  allData = allData.filter(x => x.goodsNo != goodsNo);
+  await saveData(allData);
+  loadData();
 }
 
 function resetAdd() {
@@ -209,25 +198,48 @@ function resetAdd() {
   autoNo();
 }
 
-function resetQuery() {
-  document.getElementById("qLogo").value = "";
-  document.getElementById("qGender").value = "";
-  document.getElementById("qSize").value = "";
-  document.getElementById("qModel").value = "";
-  render();
+function search() {
+  const qLogo = document.getElementById("qLogo").value.toLowerCase();
+  const qGender = document.getElementById("qGender").value;
+  const qSize = document.getElementById("qSize").value;
+  const qModel = document.getElementById("qModel").value.toLowerCase();
+
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  const filtered = allData.filter(item => {
+    if (qLogo && !item.logo.toLowerCase().includes(qLogo)) return false;
+    if (qGender && item.gender != qGender) return false;
+    if (qSize && item.size != qSize) return false;
+    if (qModel && !item.model.toLowerCase().includes(qModel)) return false;
+    return true;
+  });
+
+  filtered.forEach(item => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${item.goodsNo}</td>
+      <td>${item.logo}</td>
+      <td>${item.model}</td>
+      <td>${item.gender=="male"?"男":"女"}</td>
+      <td>${item.size}</td>
+      <td><button class="del" onclick="del('${item.goodsNo}')">删除</button></td>
+    `;
+    list.appendChild(tr);
+  });
 }
 
 function go(page) {
-  document.getElementById("addPage").style.display = page=="add" ? "block" : "none";
-  document.getElementById("queryPage").style.display = page=="query" ? "block" : "none";
-  document.querySelectorAll(".navbtn").forEach((btn,i)=>{
-    btn.classList.toggle("active", i==(page=="add"?0:1));
-  });
-  if (page == "query") render();
+  document.getElementById("addPage").style.display = page == "add" ? "block" : "none";
+  document.getElementById("queryPage").style.display = page == "query" ? "block" : "none";
+  const btns = document.querySelectorAll(".nav-btn");
+  btns[0].classList.toggle("active", page == "add");
+  btns[1].classList.toggle("active", page == "query");
+  if (page == "query") loadData();
 }
 
-window.onload = function () {
-  render();
+window.onload = () => {
+  loadData();
   resetAdd();
 };
 </script>
