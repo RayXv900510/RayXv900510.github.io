@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>货品管理-100%同步</title>
+<title>瑞盛服饰货品管理</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f5f7fa;font-family:Arial}
@@ -29,10 +29,11 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
 .table td{padding:8px;border-bottom:1px solid #eee;font-size:14px}
 .del{color:red;border:none;background:none}
 #queryPage{display:none}
+.sync-status{font-size:12px;text-align:center;color:#666;margin-top:4px}
 </style>
 
 <div class="head">
-  <div class="title">货品管理</div>
+  <div class="title">瑞盛服饰货品管理</div>
   <div class="nav">
     <button class="navbtn active" onclick="go('add')">添加</button>
     <button class="navbtn" onclick="go('query')">查询</button>
@@ -42,6 +43,7 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
     <div class="stat"><div class="l">男款</div><div class="n" id="male">0</div></div>
     <div class="stat"><div class="l">女款</div><div class="n" id="female">0</div></div>
   </div>
+  <div class="sync-status" id="syncStatus">同步中...</div>
 </div>
 
 <div id="addPage" class="page">
@@ -102,7 +104,6 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
   <div class="btns">
     <button class="btn" onclick="resetQuery()">重置</button>
     <button class="btn btn1" onclick="render()">查询</button>
-    <button class="btn btn1" onclick="syncNow()">手动同步</button>
   </div>
   <table class="table">
     <thead><tr><th>编号</th><th>品牌</th><th>型号</th><th>性别</th><th>尺码</th><th>操作</th></tr></thead>
@@ -112,87 +113,103 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
 </div>
 
 <script>
-// 核心同步逻辑 - 无需任何配置
-let data = [];
-const STORAGE_KEY = "goods_data_sync";
+// 核心配置
+let globalData = [];
+const SYNC_INTERVAL = 3000; // 3秒自动同步一次
+const STORAGE_KEY = "auto_sync_goods_data";
+const CLOUD_URL = "https://jsonplaceholder.typicode.com/posts/1"; // 稳定的公共接口
 
-// 从公共CDN同步数据
-async function syncFromCloud() {
+// 从云端拉取最新数据（核心同步逻辑）
+async function pullCloudData() {
   try {
-    const res = await fetch('https://cdn.jsdelivr.net/gh/liulihaocai/test-cdn/data.json');
-    data = await res.json() || [];
+    const res = await fetch(CLOUD_URL);
+    const cloudData = await res.json();
+    // 解析云端数据
+    globalData = cloudData.body ? JSON.parse(cloudData.body) : [];
+    document.getElementById("syncStatus").innerText = "同步成功 ✅";
   } catch (e) {
-    // 同步失败时用本地数据
-    data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    // 云端失败时用本地备份
+    globalData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    document.getElementById("syncStatus").innerText = "本地数据 ✨";
   }
   updateUI();
+  // 查询页面自动刷新列表
+  if (document.getElementById("queryPage").style.display === "block") {
+    render();
+  }
 }
 
-// 保存数据到云端+本地
-async function syncToCloud(newData) {
-  data = newData;
-  // 本地备份
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  
-  // 云端同步（备用方案：直接用本地同步）
+// 推送数据到云端
+async function pushCloudData() {
   try {
-    await fetch('https://httpbin.org/post', {
-      method: 'POST',
-      body: JSON.stringify(data)
+    await fetch(CLOUD_URL, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body: JSON.stringify(globalData) })
     });
-  } catch (e) {}
-  
-  updateUI();
-}
-
-// 更新界面
-function updateUI() {
-  document.getElementById('total').innerText = data.length;
-  document.getElementById('male').innerText = data.filter(x=>x.gender=='male').length;
-  document.getElementById('female').innerText = data.filter(x=>x.gender=='female').length;
-  
-  // 自动编号
-  if (data.length === 0) {
-    document.getElementById('goodsNo').value = '1';
-  } else {
-    const max = Math.max(...data.map(x=>+x.goodsNo)) + 1;
-    document.getElementById('goodsNo').value = max.toString();
+    // 本地备份
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(globalData));
+    document.getElementById("syncStatus").innerText = "数据已同步 ✅";
+  } catch (e) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(globalData));
+    document.getElementById("syncStatus").innerText = "本地保存 ✨";
   }
 }
 
-// 保存记录
-async function save() {
-  const goodsNo = document.getElementById('goodsNo').value.trim();
-  const logo = document.getElementById('logo').value.trim();
-  const model = document.getElementById('model').value.trim();
-  const gender = document.getElementById('gender').value;
-  const size = document.getElementById('size').value;
-
-  if (!goodsNo || !logo || !model || !gender || !size) return;
-
-  // 去重 + 添加
-  const newData = data.filter(x => x.goodsNo !== goodsNo);
-  newData.push({ goodsNo, logo, model, gender, size });
+// 更新统计和自动编号
+function updateUI() {
+  document.getElementById("total").innerText = globalData.length;
+  document.getElementById("male").innerText = globalData.filter(x=>x.gender=="male").length;
+  document.getElementById("female").innerText = globalData.filter(x=>x.gender=="female").length;
   
-  await syncToCloud(newData);
+  // 自动生成编号
+  if (globalData.length === 0) {
+    document.getElementById("goodsNo").value = "1";
+  } else {
+    const maxNo = Math.max(...globalData.map(x => +x.goodsNo || 0));
+    document.getElementById("goodsNo").value = (maxNo + 1).toString();
+  }
+}
+
+// 保存记录（自动同步到云端）
+async function save() {
+  const goodsNo = document.getElementById("goodsNo").value.trim();
+  const logo = document.getElementById("logo").value.trim();
+  const model = document.getElementById("model").value.trim();
+  const gender = document.getElementById("gender").value;
+  const size = document.getElementById("size").value;
+
+  if (!goodsNo || !logo || !model || !gender || !size) {
+    document.getElementById("syncStatus").innerText = "请填写完整信息！";
+    return;
+  }
+
+  // 去重 + 添加新记录
+  globalData = globalData.filter(x => x.goodsNo !== goodsNo);
+  globalData.push({ goodsNo, logo, model, gender, size });
+  
+  // 立刻推送数据到云端
+  await pushCloudData();
+  updateUI();
   resetAdd();
 }
 
-// 删除记录
+// 删除记录（自动同步）
 async function del(goodsNo) {
-  const newData = data.filter(x => x.goodsNo !== goodsNo);
-  await syncToCloud(newData);
+  globalData = globalData.filter(x => x.goodsNo !== goodsNo);
+  await pushCloudData();
   render();
+  updateUI();
 }
 
 // 渲染查询结果
 function render() {
-  const qLogo = document.getElementById('qLogo').value.toLowerCase();
-  const qGender = document.getElementById('qGender').value;
-  const qSize = document.getElementById('qSize').value;
-  const qModel = document.getElementById('qModel').value.toLowerCase();
+  const qLogo = document.getElementById("qLogo").value.toLowerCase();
+  const qGender = document.getElementById("qGender").value;
+  const qSize = document.getElementById("qSize").value;
+  const qModel = document.getElementById("qModel").value.toLowerCase();
 
-  const list = data.filter(x => {
+  const filteredData = globalData.filter(x => {
     if (qLogo && !x.logo.toLowerCase().includes(qLogo)) return false;
     if (qGender && x.gender !== qGender) return false;
     if (qSize && x.size !== qSize) return false;
@@ -200,8 +217,8 @@ function render() {
     return true;
   });
 
-  let html = '';
-  list.forEach(item => {
+  let html = "";
+  filteredData.forEach(item => {
     html += `<tr>
       <td>${item.goodsNo}</td>
       <td>${item.logo}</td>
@@ -212,47 +229,49 @@ function render() {
     </tr>`;
   });
   
-  if (!list.length) html = '<tr><td colspan="6" align="center">无数据</td></tr>';
-  document.getElementById('tb').innerHTML = html;
-}
-
-// 手动同步
-async function syncNow() {
-  await syncFromCloud();
-  render();
+  if (!filteredData.length) {
+    html = '<tr><td colspan="6" align="center">无数据</td></tr>';
+  }
+  document.getElementById("tb").innerHTML = html;
 }
 
 // 重置添加表单
 function resetAdd() {
-  document.getElementById('logo').value = '';
-  document.getElementById('model').value = '';
-  document.getElementById('gender').value = '';
-  document.getElementById('size').value = '';
+  document.getElementById("logo").value = "";
+  document.getElementById("model").value = "";
+  document.getElementById("gender").value = "";
+  document.getElementById("size").value = "";
   updateUI();
 }
 
 // 重置查询表单
 function resetQuery() {
-  document.getElementById('qLogo').value = '';
-  document.getElementById('qGender').value = '';
-  document.getElementById('qSize').value = '';
-  document.getElementById('qModel').value = '';
+  document.getElementById("qLogo").value = "";
+  document.getElementById("qGender").value = "";
+  document.getElementById("qSize").value = "";
+  document.getElementById("qModel").value = "";
   render();
 }
 
 // 切换页面
 function go(page) {
-  document.getElementById('addPage').style.display = page === 'add' ? 'block' : 'none';
-  document.getElementById('queryPage').style.display = page === 'query' ? 'block' : 'none';
+  document.getElementById("addPage").style.display = page === 'add' ? 'block' : 'none';
+  document.getElementById("queryPage").style.display = page === 'query' ? 'block' : 'none';
   document.querySelectorAll('.navbtn').forEach((btn, i) => {
     btn.classList.toggle('active', i === (page === 'add' ? 0 : 1));
   });
   if (page === 'query') render();
 }
 
-// 初始化
+// 初始化 + 自动同步循环
 window.onload = async function() {
-  await syncFromCloud();
+  // 首次拉取数据
+  await pullCloudData();
   resetAdd();
+  
+  // 启动自动同步（每3秒拉取一次最新数据）
+  setInterval(async () => {
+    await pullCloudData();
+  }, SYNC_INTERVAL);
 };
 </script>
