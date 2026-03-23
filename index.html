@@ -3,63 +3,127 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>货品管理-智能联想</title>
+    <title>瑞盛服饰货品管理</title>
     <style>
-        *{box-sizing:border-box}
-        body{margin:0;background:#f7f7f7;font-family:Arial}
-        .head{background:white;padding:12px}
-        .title{text-align:center;font-weight:bold;margin-bottom:8px}
-        .nav{display:flex;gap:6px;margin-bottom:10px}
-        .navbtn{flex:1;padding:10px;border:none;border-radius:6px;background:#e5e7eb}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#f7f7f7;font-family:Arial,sans-serif}
+        
+        /* 头部样式 */
+        .head{background:white;padding:15px;margin-bottom:10px}
+        .title{text-align:center;font-weight:bold;font-size:18px;margin-bottom:10px}
+        .nav{display:flex;gap:8px;margin-bottom:10px}
+        .navbtn{
+            flex:1;padding:12px 0;
+            border:none;border-radius:8px;
+            background:#e5e7eb;color:#333;
+            font-size:16px;font-weight:bold;
+        }
         .navbtn.active{background:#2563eb;color:white}
-        /* 缩小统计数字样式 */
+        
+        /* 统计区域 - 缩小显示 */
         .stats{display:flex;gap:8px}
         .stat{flex:1;background:#eef2ff;padding:6px;border-radius:6px;text-align:center}
         .stat .l{font-size:10px;color:#666;margin-bottom:2px}
         .stat .n{font-weight:bold;font-size:14px}
-        .page{padding:12px}
-        .card{background:white;border-radius:10px;padding:14px;margin-bottom:12px}
-        .item{margin-bottom:12px}
-        .label{font-size:14px;margin-bottom:4px}
-        .input{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px}
-        .row{display:flex;gap:8px}
-        .col{flex:1}
-        .btns{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
-        /* 放大查询按钮样式 */
-        .query-btn-container{display:flex;justify-content:center;margin:10px 0}
-        .query-btn{
-            padding:12px 24px; /* 放大按钮尺寸 */
-            border-radius:8px;
-            border:none;
-            background:#2563eb;
-            color:white;
-            font-size:16px;
-            font-weight:bold;
-            width:100%;
-            max-width:300px;
+        
+        /* 功能按钮栏 - 核心优化行 */
+        .func-bar{
+            display:flex;gap:8px;
+            padding:12px 15px;background:white;
+            margin-bottom:15px;border-radius:10px;
         }
-        .table{width:100%;border-collapse:collapse;margin-top:12px}
-        .table th{background:#f9fafb;padding:8px;text-align:left;font-size:13px}
-        .table td{padding:8px;border-bottom:1px solid #eee;font-size:14px}
-        .del{color:red;border:none;background:none}
-        .sync-bar{background:#eef2ff;padding:10px;text-align:center;margin:8px 12px;border-radius:6px}
-        .sync-bar .btn{margin:0 5px}
-        .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:999;display:none}
-        .modal-content{background:white;padding:20px;border-radius:10px;width:90%;max-width:400px}
-        .qrcode{margin:10px 0;text-align:center}
-        #queryPage{display:none}
-        .suggestions{position:absolute;background:white;border:1px solid #ddd;border-radius:6px;max-height:120px;overflow-y:auto;z-index:1000;width:calc(100% - 24px)}
-        .suggestion-item{padding:8px 10px;cursor:pointer}
+        .func-btn{
+            flex:1;padding:15px 0;
+            border:none;border-radius:8px;
+            font-size:18px;font-weight:bold;
+            display:flex;justify-content:center;
+            align-items:center;
+            gap:5px;
+        }
+        .func-btn.primary{background:#2563eb;color:white}
+        .func-btn.secondary{background:#e5e7eb;color:#333}
+        
+        /* 页面容器 */
+        .page{padding:0 15px;display:none}
+        .page.active{display:block}
+        
+        /* 表单样式 */
+        .card{background:white;border-radius:10px;padding:20px;margin-bottom:15px}
+        .item{margin-bottom:15px}
+        .label{font-size:16px;margin-bottom:6px;font-weight:500}
+        .input{
+            width:100%;padding:12px;
+            border:1px solid #ddd;border-radius:8px;
+            font-size:16px;
+        }
+        .row{display:flex;gap:10px;margin-bottom:15px}
+        .col{flex:1}
+        
+        /* 表格样式 */
+        .table{width:100%;border-collapse:collapse;margin-top:15px}
+        .table th{
+            background:#f9fafb;padding:12px;
+            text-align:left;font-size:16px;
+            border-bottom:2px solid #eee;
+        }
+        .table td{
+            padding:12px;border-bottom:1px solid #eee;
+            font-size:16px;
+        }
+        .del{
+            color:red;border:none;background:none;
+            font-size:16px;cursor:pointer;
+        }
+        
+        /* 查询按钮 */
+        .query-btn-container{display:flex;justify-content:center;margin:15px 0}
+        .query-btn{
+            padding:15px 30px;
+            border-radius:8px;border:none;
+            background:#2563eb;color:white;
+            font-size:18px;font-weight:bold;
+            width:100%;max-width:100%;
+        }
+        
+        /* 智能联想 - 通用样式 */
+        .suggestions{
+            position:absolute;background:white;
+            border:1px solid #ddd;border-radius:8px;
+            max-height:150px;overflow-y:auto;
+            z-index:1000;width:calc(100% - 30px);
+            top:100%;left:0;margin-top:2px;
+            box-shadow:0 2px 8px rgba(0,0,0,0.1);
+        }
+        .suggestion-item{
+            padding:10px 12px;cursor:pointer;
+            font-size:16px;
+        }
         .suggestion-item:hover{background:#f0f7ff}
         .input-container{position:relative}
+        
+        /* 弹窗样式 */
+        .modal{
+            position:fixed;top:0;left:0;
+            width:100%;height:100%;
+            background:rgba(0,0,0,0.5);
+            display:flex;justify-content:center;
+            align-items:center;
+            z-index:999;display:none;
+        }
+        .modal-content{
+            background:white;padding:20px;
+            border-radius:10px;width:90%;
+            max-width:400px;
+        }
+        .qrcode{margin:10px 0;text-align:center}
     </style>
 </head>
 <body>
     <div class="head">
-        <div class="title">货品管理</div>
+        <div class="title">瑞盛服饰货品管理</div>
         <div class="nav">
-            <button class="navbtn active" onclick="go('add')">添加</button>
-            <button class="navbtn" onclick="go('query')">查询</button>
+            <button class="navbtn active" onclick="go('add')">添加货品</button>
+            <button class="navbtn" onclick="go('query')">查询货品</button>
         </div>
         <div class="stats">
             <div class="stat"><div class="l">总记录</div><div class="n" id="total">0</div></div>
@@ -68,25 +132,29 @@
         </div>
     </div>
 
-    <div class="sync-bar">
-        <button class="btn btn1" onclick="exportData()">导出数据</button>
-        <button class="btn" onclick="importData()">导入数据</button>
+    <!-- 功能按钮栏 - 合并所有操作按钮 -->
+    <div class="func-bar">
+        <button class="func-btn primary" onclick="exportData()">📤 导出数据</button>
+        <button class="func-btn secondary" onclick="importData()">📥 导入数据</button>
+        <button class="func-btn secondary" onclick="resetAdd()">🔄 重置</button>
+        <button class="func-btn primary" onclick="save()">💾 保存</button>
     </div>
 
-    <div id="addPage" class="page">
+    <!-- 添加页面 -->
+    <div id="addPage" class="page active">
         <div class="card">
             <div class="item">
-                <div class="label">编号</div>
+                <div class="label">货品编号</div>
                 <input class="input" id="goodsNo" readonly>
             </div>
             <div class="item input-container">
                 <div class="label">品牌</div>
-                <input class="input" id="logo" oninput="suggest(this, 'logo')">
+                <input class="input" id="logo" oninput="suggest(this, 'logo')" placeholder="输入品牌名称">
                 <div id="logoSuggestions" class="suggestions"></div>
             </div>
             <div class="item input-container">
                 <div class="label">型号</div>
-                <input class="input" id="model" oninput="suggest(this, 'model')">
+                <input class="input" id="model" oninput="suggest(this, 'model')" placeholder="输入型号信息">
                 <div id="modelSuggestions" class="suggestions"></div>
             </div>
             <div class="row">
@@ -108,26 +176,32 @@
                     </select>
                 </div>
             </div>
-            <div class="btns">
-                <button class="btn" onclick="resetAdd()">重置</button>
-                <button class="btn btn1" onclick="save()">保存</button>
-            </div>
         </div>
     </div>
 
+    <!-- 查询页面 -->
     <div id="queryPage" class="page">
         <div class="card">
             <div class="row">
-                <div class="col item"><div class="label">品牌</div><input class="input" id="qLogo"></div>
+                <!-- 查询品牌 - 添加智能联想 -->
+                <div class="col item input-container">
+                    <div class="label">品牌</div>
+                    <input class="input" id="qLogo" oninput="suggest(this, 'logo', 'q')" placeholder="输入品牌关键词">
+                    <div id="qLogoSuggestions" class="suggestions"></div>
+                </div>
                 <div class="col item"><div class="label">性别</div><select class="input" id="qGender"><option value="">全部</option><option value="male">男</option><option value="female">女</option></select></div>
             </div>
-            <div class="row" style="margin-top:8px">
-                <div class="col item"><div class="label">尺码</div><input class="input" id="qSize"></div>
-                <div class="col item"><div class="label">型号</div><input class="input" id="qModel"></div>
+            <div class="row">
+                <div class="col item"><div class="label">尺码</div><input class="input" id="qSize" placeholder="输入尺码数字"></div>
+                <!-- 查询型号 - 添加智能联想 -->
+                <div class="col item input-container">
+                    <div class="label">型号</div>
+                    <input class="input" id="qModel" oninput="suggest(this, 'model', 'q')" placeholder="输入型号关键词">
+                    <div id="qModelSuggestions" class="suggestions"></div>
+                </div>
             </div>
-            <!-- 查询按钮移到上方，放大尺寸，移除重置按钮 -->
             <div class="query-btn-container">
-                <button class="query-btn" onclick="render()">查询</button>
+                <button class="query-btn" onclick="render()">🔍 查询货品</button>
             </div>
             <table class="table">
                 <thead><tr><th>编号</th><th>品牌</th><th>型号</th><th>性别</th><th>尺码</th><th>操作</th></tr></thead>
@@ -139,12 +213,12 @@
     <!-- 导出弹窗 -->
     <div class="modal" id="exportModal">
         <div class="modal-content">
-            <h3 style="text-align:center;margin-bottom:10px">📤 导出数据</h3>
+            <h3 style="text-align:center;margin-bottom:15px;font-size:18px">📤 导出数据</h3>
             <div class="qrcode" id="qrcode"></div>
-            <p style="font-size:12px;color:#02a902;text-align:center">✅ 数据已自动复制到剪贴板</p>
-            <textarea id="exportText" readonly style="width:100%;height:60px;padding:8px;border-radius:6px"></textarea>
-            <div class="btns" style="justify-content:center">
-                <button class="btn" onclick="closeModal('exportModal')">关闭</button>
+            <p style="font-size:14px;color:#02a902;text-align:center;margin:10px 0">✅ 数据已自动复制到剪贴板</p>
+            <textarea id="exportText" readonly style="width:100%;height:80px;padding:10px;border-radius:8px;font-size:14px"></textarea>
+            <div style="display:flex;justify-content:center;margin-top:15px">
+                <button class="func-btn secondary" onclick="closeModal('exportModal')" style="width:100px">关闭</button>
             </div>
         </div>
     </div>
@@ -152,14 +226,12 @@
     <!-- 导入弹窗 -->
     <div class="modal" id="importModal">
         <div class="modal-content">
-            <h3 style="text-align:center;margin-bottom:10px">📥 导入数据</h3>
-            <p style="font-size:12px;color:#666">粘贴导出的文本内容</p>
-            <div class="import-area">
-                <textarea id="importText" placeholder="粘贴到这里..." style="width:100%;height:100px;border:none;outline:none;padding:8px"></textarea>
-            </div>
-            <div class="btns" style="justify-content:center;margin-top:10px">
-                <button class="btn btn1" onclick="confirmImport()">✅ 确认导入（合并数据）</button>
-                <button class="btn" onclick="closeModal('importModal')">取消</button>
+            <h3 style="text-align:center;margin-bottom:15px;font-size:18px">📥 导入数据</h3>
+            <p style="font-size:14px;color:#666;margin-bottom:10px">粘贴导出的文本内容</p>
+            <textarea id="importText" placeholder="粘贴到这里..." style="width:100%;height:120px;border:none;outline:none;padding:10px;font-size:16px"></textarea>
+            <div style="display:flex;justify-content:center;gap:10px;margin-top:15px">
+                <button class="func-btn primary" onclick="confirmImport()" style="width:120px">✅ 确认导入</button>
+                <button class="func-btn secondary" onclick="closeModal('importModal')" style="width:100px">取消</button>
             </div>
         </div>
     </div>
@@ -169,23 +241,27 @@
         const STORAGE_KEY = "goods_data_simple";
         let data = [];
 
+        // 加载本地数据
         function loadData() {
             try { data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [] } catch { data = [] }
             updateStats();
             autoNo();
         }
 
+        // 保存到本地
         function saveData() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
             updateStats();
         }
 
+        // 更新统计
         function updateStats() {
             document.getElementById("total").innerText = data.length;
             document.getElementById("male").innerText = data.filter(x=>x.gender=="male").length;
             document.getElementById("female").innerText = data.filter(x=>x.gender=="female").length;
         }
 
+        // 自动生成编号
         function autoNo() {
             if (!data.length) { 
                 document.getElementById("goodsNo").value = "1"; 
@@ -196,6 +272,7 @@
             document.getElementById("goodsNo").value = (maxNum + 1).toString();
         }
 
+        // 重置添加表单
         function resetAdd() {
             document.getElementById("logo").value = "";
             document.getElementById("model").value = "";
@@ -204,31 +281,43 @@
             autoNo();
         }
 
+        // 保存记录
         function save() {
             const goodsNo = document.getElementById("goodsNo").value.trim();
             const logo = document.getElementById("logo").value.trim();
             const model = document.getElementById("model").value.trim();
             const gender = document.getElementById("gender").value;
             const size = document.getElementById("size").value;
-            if (!goodsNo || !logo || !model || !gender || !size) return;
+            
+            if (!goodsNo || !logo || !model || !gender || !size) {
+                alert("请填写完整的货品信息！");
+                return;
+            }
             
             data = data.filter(x=>x.goodsNo != goodsNo);
             data.push({ goodsNo, logo, model, gender, size });
             saveData();
             resetAdd();
+            alert("✅ 货品信息保存成功！");
         }
 
+        // 删除记录
         function del(goodsNo) {
-            data = data.filter(x=>x.goodsNo != goodsNo);
-            saveData();
-            render();
+            if (confirm("确定要删除这条记录吗？")) {
+                data = data.filter(x=>x.goodsNo != goodsNo);
+                saveData();
+                render();
+                updateStats();
+            }
         }
 
+        // 渲染查询列表
         function render() {
             const qLogo = document.getElementById("qLogo").value.toLowerCase();
             const qGender = document.getElementById("qGender").value;
             const qSize = document.getElementById("qSize").value;
             const qModel = document.getElementById("qModel").value.toLowerCase();
+            
             const list = data.filter(x=>{
                 if (qLogo && !x.logo.toLowerCase().includes(qLogo)) return false;
                 if (qGender && x.gender != qGender) return false;
@@ -236,6 +325,7 @@
                 if (qModel && !x.model.toLowerCase().includes(qModel)) return false;
                 return true;
             });
+            
             let html = "";
             list.forEach(x=>{
                 html+=`<tr>
@@ -244,55 +334,58 @@
                     <td>${x.model}</td>
                     <td>${x.gender=="male"?"男":"女"}</td>
                     <td>${x.size}</td>
-                    <td><button class="del" onclick="del('${x.goodsNo}')">删除</button></td>
+                    <td><button class="del" onclick="del('${x.goodsNo}')">🗑️ 删除</button></td>
                 </tr>`;
             });
-            if (!list.length) html='<tr><td colspan="6" align="center">无数据</td></tr>';
+            
+            if (!list.length) html='<tr><td colspan="6" align="center" style="padding:20px;font-size:16px">暂无匹配数据</td></tr>';
             document.getElementById("tb").innerHTML = html;
         }
 
-        function resetQuery() {
-            document.getElementById("qLogo").value = "";
-            document.getElementById("qGender").value = "";
-            document.getElementById("qSize").value = "";
-            document.getElementById("qModel").value = "";
-            render();
-        }
-
+        // 切换页面
         function go(page) {
-            document.getElementById("addPage").style.display = page=="add"?"block":"none";
-            document.getElementById("queryPage").style.display = page=="query"?"block":"none";
+            document.getElementById("addPage").classList.toggle("active", page=="add");
+            document.getElementById("queryPage").classList.toggle("active", page=="query");
             document.querySelectorAll(".navbtn").forEach((btn,i)=>{
                 btn.classList.toggle("active", i==(page=="add"?0:1));
             });
             if (page=="query") render();
         }
 
+        // 导出数据
         function exportData() {
             const text = btoa(JSON.stringify(data));
             document.getElementById("exportText").value = text;
 
+            // 自动复制
             navigator.clipboard.writeText(text).then(() => {
                 console.log("自动复制成功");
             }).catch(err => {});
 
             if (window.QRCode) {
-                QRCode.toCanvas(document.getElementById("qrcode"), text, {width:200}, (err)=>{});
+                QRCode.toCanvas(document.getElementById("qrcode"), text, {width:220}, (err)=>{});
             }
             document.getElementById("exportModal").style.display = "flex";
         }
 
+        // 导入数据弹窗
         function importData() {
             document.getElementById("importText").value = "";
             document.getElementById("importModal").style.display = "flex";
         }
 
+        // 确认导入
         function confirmImport() {
             const text = document.getElementById("importText").value.trim();
-            if (!text) { alert("请粘贴导出的文本内容！"); return; }
+            if (!text) { 
+                alert("请粘贴导出的文本内容！"); 
+                return; 
+            }
+            
             try {
                 const importData = JSON.parse(atob(text));
                 const temp = [...data];
+                
                 importData.forEach(item => {
                     const index = temp.findIndex(x => x.goodsNo === item.goodsNo);
                     if (index === -1) {
@@ -301,32 +394,39 @@
                         temp[index] = item;
                     }
                 });
+                
                 data = temp;
                 saveData();
                 closeModal('importModal');
                 render();
-                alert("✅ 导入成功！数据已合并，原有数据保留");
+                updateStats();
+                alert("✅ 数据导入成功！已合并原有数据");
             } catch(e) { 
                 console.error(e);
                 alert("❌ 导入失败，请检查文本是否正确！"); 
             }
         }
 
+        // 关闭弹窗
         function closeModal(id) {
             document.getElementById(id).style.display = "none";
         }
 
-        // 智能联想函数
-        function suggest(input, type) {
+        // 智能联想函数 - 支持添加/查询双场景
+        function suggest(input, type, prefix = "") {
             const value = input.value.toLowerCase();
-            const suggestions = document.getElementById(`${type}Suggestions`);
+            // 拼接联想容器ID（区分添加/查询）
+            const suggestionsId = prefix ? `${prefix}${type.charAt(0).toUpperCase() + type.slice(1)}Suggestions` : `${type}Suggestions`;
+            const suggestions = document.getElementById(suggestionsId);
             suggestions.innerHTML = "";
             
-            if (!value) return;
+            if (!value || !data.length) return;
             
+            // 提取唯一值并筛选匹配项
             const uniqueItems = [...new Set(data.map(item => item[type]))];
             const matches = uniqueItems.filter(item => item.toLowerCase().includes(value));
             
+            // 显示匹配结果
             matches.forEach(item => {
                 const div = document.createElement("div");
                 div.className = "suggestion-item";
@@ -339,6 +439,7 @@
             });
         }
 
+        // 初始化
         window.onload = function() {
             loadData();
             resetAdd();
