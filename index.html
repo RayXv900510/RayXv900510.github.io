@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>瑞盛服饰货品管理</title>
+<title>瑞盛货品管理</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f5f7fa;font-family:Arial}
@@ -28,12 +29,17 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
 .table th{background:#f9fafb;padding:8px;text-align:left;font-size:13px}
 .table td{padding:8px;border-bottom:1px solid #eee;font-size:14px}
 .del{color:red;border:none;background:none}
+.sync-bar{background:#eef2ff;padding:10px;text-align:center;margin:8px 12px;border-radius:6px}
+.sync-bar .btn{margin:0 5px}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:999;display:none}
+.modal-content{background:white;padding:20px;border-radius:10px;width:90%;max-width:400px}
+.qrcode{margin:10px 0;text-align:center}
+#import-area{width:100%;height:80px;margin:10px 0;padding:8px;border:1px dashed #ddd;border-radius:6px}
 #queryPage{display:none}
-.sync-status{font-size:12px;text-align:center;color:#666;margin-top:4px}
 </style>
 
 <div class="head">
-  <div class="title">瑞盛服饰货品管理</div>
+  <div class="title">瑞盛货品管理</div>
   <div class="nav">
     <button class="navbtn active" onclick="go('add')">添加</button>
     <button class="navbtn" onclick="go('query')">查询</button>
@@ -43,7 +49,11 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
     <div class="stat"><div class="l">男款</div><div class="n" id="male">0</div></div>
     <div class="stat"><div class="l">女款</div><div class="n" id="female">0</div></div>
   </div>
-  <div class="sync-status" id="syncStatus">同步中...</div>
+</div>
+
+<div class="sync-bar">
+  <button class="btn btn1" onclick="exportData()">📤 一键导出</button>
+  <button class="btn" onclick="importData()">📥 一键导入</button>
 </div>
 
 <div id="addPage" class="page">
@@ -54,11 +64,11 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
   </div>
   <div class="item">
     <div class="label">品牌</div>
-    <input class="input" id="logo">
+    <input class="input" id="logo" placeholder="如：Nike">
   </div>
   <div class="item">
     <div class="label">型号</div>
-    <input class="input" id="model">
+    <input class="input" id="model" placeholder="如：2025款">
   </div>
   <div class="row">
     <div class="col item">
@@ -112,127 +122,63 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
 </div>
 </div>
 
+<!-- 导出弹窗 -->
+<div class="modal" id="exportModal">
+  <div class="modal-content">
+    <h3 style="text-align:center;margin-bottom:10px">📤 导出数据</h3>
+    <div class="qrcode" id="qrcode"></div>
+    <p style="font-size:12px;color:#02a902;text-align:center">✅ 数据已自动复制到剪贴板</p>
+    <textarea id="exportText" readonly style="width:100%;height:60px;padding:8px;border-radius:6px"></textarea>
+    <div class="btns" style="justify-content:center">
+      <button class="btn" onclick="closeModal('exportModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 导入弹窗 -->
+<div class="modal" id="importModal">
+  <div class="modal-content">
+    <h3 style="text-align:center;margin-bottom:10px">📥 导入数据</h3>
+    <p style="font-size:12px;color:#666">粘贴导出的文本内容</p>
+    <div class="import-area">
+      <textarea id="importText" placeholder="粘贴到这里..." style="width:100%;height:100px;border:none;outline:none;padding:8px"></textarea>
+    </div>
+    <div class="btns" style="justify-content:center;margin-top:10px">
+      <button class="btn btn1" onclick="confirmImport()">✅ 确认导入</button>
+      <button class="btn" onclick="closeModal('importModal')">取消</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// 核心配置
-let globalData = [];
-const SYNC_INTERVAL = 3000; // 3秒自动同步一次
-const STORAGE_KEY = "auto_sync_goods_data";
-const CLOUD_URL = "https://jsonplaceholder.typicode.com/posts/1"; // 稳定的公共接口
+const STORAGE_KEY = "goods_data_simple";
+let data = [];
 
-// 从云端拉取最新数据（核心同步逻辑）
-async function pullCloudData() {
-  try {
-    const res = await fetch(CLOUD_URL);
-    const cloudData = await res.json();
-    // 解析云端数据
-    globalData = cloudData.body ? JSON.parse(cloudData.body) : [];
-    document.getElementById("syncStatus").innerText = "同步成功 ✅";
-  } catch (e) {
-    // 云端失败时用本地备份
-    globalData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    document.getElementById("syncStatus").innerText = "本地数据 ✨";
-  }
-  updateUI();
-  // 查询页面自动刷新列表
-  if (document.getElementById("queryPage").style.display === "block") {
-    render();
-  }
+// 加载本地数据
+function loadData() {
+  try { data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [] } catch { data = [] }
+  updateStats();
+  autoNo();
 }
 
-// 推送数据到云端
-async function pushCloudData() {
-  try {
-    await fetch(CLOUD_URL, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body: JSON.stringify(globalData) })
-    });
-    // 本地备份
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(globalData));
-    document.getElementById("syncStatus").innerText = "数据已同步 ✅";
-  } catch (e) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(globalData));
-    document.getElementById("syncStatus").innerText = "本地保存 ✨";
-  }
+// 保存到本地
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  updateStats();
 }
 
-// 更新统计和自动编号
-function updateUI() {
-  document.getElementById("total").innerText = globalData.length;
-  document.getElementById("male").innerText = globalData.filter(x=>x.gender=="male").length;
-  document.getElementById("female").innerText = globalData.filter(x=>x.gender=="female").length;
-  
-  // 自动生成编号
-  if (globalData.length === 0) {
-    document.getElementById("goodsNo").value = "1";
-  } else {
-    const maxNo = Math.max(...globalData.map(x => +x.goodsNo || 0));
-    document.getElementById("goodsNo").value = (maxNo + 1).toString();
-  }
+// 更新统计
+function updateStats() {
+  document.getElementById("total").innerText = data.length;
+  document.getElementById("male").innerText = data.filter(x=>x.gender=="male").length;
+  document.getElementById("female").innerText = data.filter(x=>x.gender=="female").length;
 }
 
-// 保存记录（自动同步到云端）
-async function save() {
-  const goodsNo = document.getElementById("goodsNo").value.trim();
-  const logo = document.getElementById("logo").value.trim();
-  const model = document.getElementById("model").value.trim();
-  const gender = document.getElementById("gender").value;
-  const size = document.getElementById("size").value;
-
-  if (!goodsNo || !logo || !model || !gender || !size) {
-    document.getElementById("syncStatus").innerText = "请填写完整信息！";
-    return;
-  }
-
-  // 去重 + 添加新记录
-  globalData = globalData.filter(x => x.goodsNo !== goodsNo);
-  globalData.push({ goodsNo, logo, model, gender, size });
-  
-  // 立刻推送数据到云端
-  await pushCloudData();
-  updateUI();
-  resetAdd();
-}
-
-// 删除记录（自动同步）
-async function del(goodsNo) {
-  globalData = globalData.filter(x => x.goodsNo !== goodsNo);
-  await pushCloudData();
-  render();
-  updateUI();
-}
-
-// 渲染查询结果
-function render() {
-  const qLogo = document.getElementById("qLogo").value.toLowerCase();
-  const qGender = document.getElementById("qGender").value;
-  const qSize = document.getElementById("qSize").value;
-  const qModel = document.getElementById("qModel").value.toLowerCase();
-
-  const filteredData = globalData.filter(x => {
-    if (qLogo && !x.logo.toLowerCase().includes(qLogo)) return false;
-    if (qGender && x.gender !== qGender) return false;
-    if (qSize && x.size !== qSize) return false;
-    if (qModel && !x.model.toLowerCase().includes(qModel)) return false;
-    return true;
-  });
-
-  let html = "";
-  filteredData.forEach(item => {
-    html += `<tr>
-      <td>${item.goodsNo}</td>
-      <td>${item.logo}</td>
-      <td>${item.model}</td>
-      <td>${item.gender === 'male' ? '男' : '女'}</td>
-      <td>${item.size}</td>
-      <td><button class="del" onclick="del('${item.goodsNo}')">删除</button></td>
-    </tr>`;
-  });
-  
-  if (!filteredData.length) {
-    html = '<tr><td colspan="6" align="center">无数据</td></tr>';
-  }
-  document.getElementById("tb").innerHTML = html;
+// 自动生成编号
+function autoNo() {
+  if (!data.length) { document.getElementById("goodsNo").value = "1"; return; }
+  const maxNo = Math.max(...data.map(x=>+x.goodsNo || 0));
+  document.getElementById("goodsNo").value = (maxNo + 1).toString();
 }
 
 // 重置添加表单
@@ -241,7 +187,56 @@ function resetAdd() {
   document.getElementById("model").value = "";
   document.getElementById("gender").value = "";
   document.getElementById("size").value = "";
-  updateUI();
+  autoNo();
+}
+
+// 保存记录
+function save() {
+  const goodsNo = document.getElementById("goodsNo").value.trim();
+  const logo = document.getElementById("logo").value.trim();
+  const model = document.getElementById("model").value.trim();
+  const gender = document.getElementById("gender").value;
+  const size = document.getElementById("size").value;
+  if (!goodsNo || !logo || !model || !gender || !size) return;
+  data = data.filter(x=>x.goodsNo != goodsNo);
+  data.push({ goodsNo, logo, model, gender, size });
+  saveData();
+  resetAdd();
+}
+
+// 删除记录
+function del(goodsNo) {
+  data = data.filter(x=>x.goodsNo != goodsNo);
+  saveData();
+  render();
+}
+
+// 渲染查询列表
+function render() {
+  const qLogo = document.getElementById("qLogo").value.toLowerCase();
+  const qGender = document.getElementById("qGender").value;
+  const qSize = document.getElementById("qSize").value;
+  const qModel = document.getElementById("qModel").value.toLowerCase();
+  const list = data.filter(x=>{
+    if (qLogo && !x.logo.toLowerCase().includes(qLogo)) return false;
+    if (qGender && x.gender != qGender) return false;
+    if (qSize && x.size != qSize) return false;
+    if (qModel && !x.model.toLowerCase().includes(qModel)) return false;
+    return true;
+  });
+  let html = "";
+  list.forEach(x=>{
+    html+=`<tr>
+      <td>${x.goodsNo}</td>
+      <td>${x.logo}</td>
+      <td>${x.model}</td>
+      <td>${x.gender=="male"?"男":"女"}</td>
+      <td>${x.size}</td>
+      <td><button class="del" onclick="del('${x.goodsNo}')">删除</button></td>
+    </tr>`;
+  });
+  if (!list.length) html='<tr><td colspan="6" align="center">无数据</td></tr>';
+  document.getElementById("tb").innerHTML = html;
 }
 
 // 重置查询表单
@@ -255,23 +250,56 @@ function resetQuery() {
 
 // 切换页面
 function go(page) {
-  document.getElementById("addPage").style.display = page === 'add' ? 'block' : 'none';
-  document.getElementById("queryPage").style.display = page === 'query' ? 'block' : 'none';
-  document.querySelectorAll('.navbtn').forEach((btn, i) => {
-    btn.classList.toggle('active', i === (page === 'add' ? 0 : 1));
+  document.getElementById("addPage").style.display = page=="add"?"block":"none";
+  document.getElementById("queryPage").style.display = page=="query"?"block":"none";
+  document.querySelectorAll(".navbtn").forEach((btn,i)=>{
+    btn.classList.toggle("active", i==(page=="add"?0:1));
   });
-  if (page === 'query') render();
+  if (page=="query") render();
 }
 
-// 初始化 + 自动同步循环
-window.onload = async function() {
-  // 首次拉取数据
-  await pullCloudData();
+// 导出数据 + 自动复制
+function exportData() {
+  const text = btoa(JSON.stringify(data));
+  document.getElementById("exportText").value = text;
+
+  // 自动复制
+  navigator.clipboard.writeText(text).then(() => {
+    console.log("自动复制成功");
+  }).catch(err => {});
+
+  QRCode.toCanvas(document.getElementById("qrcode"), text, {width:200}, (err)=>{});
+  document.getElementById("exportModal").style.display = "flex";
+}
+
+// 导入数据弹窗
+function importData() {
+  document.getElementById("importText").value = "";
+  document.getElementById("importModal").style.display = "flex";
+}
+
+// 确认导入
+function confirmImport() {
+  const text = document.getElementById("importText").value.trim();
+  if (!text) { alert("请粘贴导出的文本内容！"); return; }
+  try {
+    data = JSON.parse(atob(text));
+    saveData();
+    closeModal('importModal');
+    render();
+    alert("✅ 导入成功！");
+  } catch(e) { alert("❌ 导入失败，请检查文本是否正确！"); }
+}
+
+// 关闭弹窗
+function closeModal(id) {
+  document.getElementById(id).style.display = "none";
+}
+
+// 初始化
+window.onload = function() {
+  loadData();
   resetAdd();
-  
-  // 启动自动同步（每3秒拉取一次最新数据）
-  setInterval(async () => {
-    await pullCloudData();
-  }, SYNC_INTERVAL);
 };
 </script>
+</html>
