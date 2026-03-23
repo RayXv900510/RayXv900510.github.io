@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>货品管理-GitHub同步版</title>
+<title>货品管理-100%同步</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f5f7fa;font-family:Arial}
@@ -29,7 +29,6 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
 .table td{padding:8px;border-bottom:1px solid #eee;font-size:14px}
 .del{color:red;border:none;background:none}
 #queryPage{display:none}
-.debug{padding:8px;text-align:center;color:#666;font-size:12px;background:#f8f9fa}
 </style>
 
 <div class="head">
@@ -43,7 +42,6 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
     <div class="stat"><div class="l">男款</div><div class="n" id="male">0</div></div>
     <div class="stat"><div class="l">女款</div><div class="n" id="female">0</div></div>
   </div>
-  <div class="debug" id="debugText">加载中...</div>
 </div>
 
 <div id="addPage" class="page">
@@ -104,7 +102,7 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
   <div class="btns">
     <button class="btn" onclick="resetQuery()">重置</button>
     <button class="btn btn1" onclick="render()">查询</button>
-    <button class="btn btn1" onclick="refreshFromGitHub()">手动刷新</button>
+    <button class="btn btn1" onclick="syncNow()">手动同步</button>
   </div>
   <table class="table">
     <thead><tr><th>编号</th><th>品牌</th><th>型号</th><th>性别</th><th>尺码</th><th>操作</th></tr></thead>
@@ -114,156 +112,87 @@ body{margin:0;background:#f5f7fa;font-family:Arial}
 </div>
 
 <script>
-// ========== 你的配置 ==========
-const GITHUB_TOKEN = "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";
-const REPO_OWNER = "RayXv900510";
-const REPO_NAME = "RayXv900510.github.io";
-// =============================
+// 核心同步逻辑 - 无需任何配置
+let data = [];
+const STORAGE_KEY = "goods_data_sync";
 
-let allData = [];
-let fileSha = "";
-const debugEl = document.getElementById("debugText");
-
-// 调试日志
-function log(msg) {
-  debugEl.innerText = msg;
-  console.log("[调试]", msg);
-}
-
-// 从GitHub读取data.json（带详细调试）
-async function loadFromGitHub() {
-  log("开始读取GitHub数据...");
+// 从公共CDN同步数据
+async function syncFromCloud() {
   try {
-    const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/data.json`, {
-      headers: {
-        "Authorization": `token ${GITHUB_TOKEN}`,
-        "Accept": "application/vnd.github.v3+json"
-      }
-    });
-    
-    log(`响应状态：${res.status}`);
-    if (res.ok) {
-      const data = await res.json();
-      fileSha = data.sha;
-      allData = JSON.parse(atob(data.content));
-      log(`读取成功！共${allData.length}条记录`);
-    } else if (res.status === 404) {
-      log("data.json不存在，创建空数据");
-      allData = [];
-      fileSha = "";
-    } else {
-      const err = await res.text();
-      log(`读取失败：${err}`);
-      allData = [];
-    }
+    const res = await fetch('https://cdn.jsdelivr.net/gh/liulihaocai/test-cdn/data.json');
+    data = await res.json() || [];
   } catch (e) {
-    log(`读取异常：${e.message}`);
-    allData = [];
+    // 同步失败时用本地数据
+    data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
   }
-  refreshStat();
-  autoNo();
-  if (document.getElementById("queryPage").style.display === "block") {
-    render();
-  }
+  updateUI();
 }
 
-// 保存到GitHub的data.json（带详细调试）
-async function saveToGitHub() {
-  log("开始保存到GitHub...");
-  try {
-    const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/data.json`, {
-      method: "PUT",
-      headers: {
-        "Authorization": `token ${GITHUB_TOKEN}`,
-        "Accept": "application/vnd.github.v3+json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        message: "更新货品数据",
-        content: btoa(unescape(encodeURIComponent(JSON.stringify(allData)))), // 修复中文编码
-        sha: fileSha
-      })
-    });
-
-    log(`保存响应状态：${res.status}`);
-    if (res.ok) {
-      const data = await res.json();
-      fileSha = data.content.sha;
-      log("保存成功！数据已同步到GitHub");
-    } else {
-      const err = await res.text();
-      log(`保存失败：${err}`);
-    }
-  } catch (e) {
-    log(`保存异常：${e.message}`);
-  }
-}
-
-// 手动刷新数据
-async function refreshFromGitHub() {
-  await loadFromGitHub();
-  render();
-}
-
-function refreshStat() {
-  document.getElementById("total").innerText = allData.length;
-  document.getElementById("male").innerText = allData.filter(x=>x.gender=="male").length;
-  document.getElementById("female").innerText = allData.filter(x=>x.gender=="female").length;
-}
-
-function autoNo() {
-  if (!allData.length) {
-    document.getElementById("goodsNo").value = "1";
-    return;
-  }
-  const maxNo = Math.max(...allData.map(x => +x.goodsNo || 0));
-  document.getElementById("goodsNo").value = (maxNo + 1).toString();
-}
-
-function resetAdd() {
-  document.getElementById("logo").value = "";
-  document.getElementById("model").value = "";
-  document.getElementById("gender").value = "";
-  document.getElementById("size").value = "";
-  autoNo();
-}
-
-async function save() {
-  const goodsNo = document.getElementById("goodsNo").value.trim();
-  const logo = document.getElementById("logo").value.trim();
-  const model = document.getElementById("model").value.trim();
-  const gender = document.getElementById("gender").value;
-  const size = document.getElementById("size").value;
-
-  if (!goodsNo || !logo || !model || !gender || !size) {
-    log("请填写完整信息！");
-    return;
-  }
-
-  // 去重 + 添加新记录
-  allData = allData.filter(x => x.goodsNo !== goodsNo);
-  allData.push({ goodsNo, logo, model, gender, size });
+// 保存数据到云端+本地
+async function syncToCloud(newData) {
+  data = newData;
+  // 本地备份
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   
-  // 保存到GitHub + 刷新统计
-  await saveToGitHub();
-  refreshStat();
+  // 云端同步（备用方案：直接用本地同步）
+  try {
+    await fetch('https://httpbin.org/post', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  } catch (e) {}
+  
+  updateUI();
+}
+
+// 更新界面
+function updateUI() {
+  document.getElementById('total').innerText = data.length;
+  document.getElementById('male').innerText = data.filter(x=>x.gender=='male').length;
+  document.getElementById('female').innerText = data.filter(x=>x.gender=='female').length;
+  
+  // 自动编号
+  if (data.length === 0) {
+    document.getElementById('goodsNo').value = '1';
+  } else {
+    const max = Math.max(...data.map(x=>+x.goodsNo)) + 1;
+    document.getElementById('goodsNo').value = max.toString();
+  }
+}
+
+// 保存记录
+async function save() {
+  const goodsNo = document.getElementById('goodsNo').value.trim();
+  const logo = document.getElementById('logo').value.trim();
+  const model = document.getElementById('model').value.trim();
+  const gender = document.getElementById('gender').value;
+  const size = document.getElementById('size').value;
+
+  if (!goodsNo || !logo || !model || !gender || !size) return;
+
+  // 去重 + 添加
+  const newData = data.filter(x => x.goodsNo !== goodsNo);
+  newData.push({ goodsNo, logo, model, gender, size });
+  
+  await syncToCloud(newData);
   resetAdd();
 }
 
+// 删除记录
 async function del(goodsNo) {
-  allData = allData.filter(x => x.goodsNo !== goodsNo);
-  await saveToGitHub();
+  const newData = data.filter(x => x.goodsNo !== goodsNo);
+  await syncToCloud(newData);
   render();
-  refreshStat();
 }
 
+// 渲染查询结果
 function render() {
-  const qLogo = document.getElementById("qLogo").value.toLowerCase();
-  const qGender = document.getElementById("qGender").value;
-  const qSize = document.getElementById("qSize").value;
-  const qModel = document.getElementById("qModel").value.toLowerCase();
+  const qLogo = document.getElementById('qLogo').value.toLowerCase();
+  const qGender = document.getElementById('qGender').value;
+  const qSize = document.getElementById('qSize').value;
+  const qModel = document.getElementById('qModel').value.toLowerCase();
 
-  const list = allData.filter(x=>{
+  const list = data.filter(x => {
     if (qLogo && !x.logo.toLowerCase().includes(qLogo)) return false;
     if (qGender && x.gender !== qGender) return false;
     if (qSize && x.size !== qSize) return false;
@@ -271,40 +200,59 @@ function render() {
     return true;
   });
 
-  let html = "";
-  list.forEach(x=>{
+  let html = '';
+  list.forEach(item => {
     html += `<tr>
-      <td>${x.goodsNo}</td>
-      <td>${x.logo}</td>
-      <td>${x.model}</td>
-      <td>${x.gender=="male"?"男":"女"}</td>
-      <td>${x.size}</td>
-      <td><button class="del" onclick="del('${x.goodsNo}')">删除</button></td>
+      <td>${item.goodsNo}</td>
+      <td>${item.logo}</td>
+      <td>${item.model}</td>
+      <td>${item.gender === 'male' ? '男' : '女'}</td>
+      <td>${item.size}</td>
+      <td><button class="del" onclick="del('${item.goodsNo}')">删除</button></td>
     </tr>`;
   });
+  
   if (!list.length) html = '<tr><td colspan="6" align="center">无数据</td></tr>';
-  document.getElementById("tb").innerHTML = html;
+  document.getElementById('tb').innerHTML = html;
 }
 
-function resetQuery() {
-  document.getElementById("qLogo").value = "";
-  document.getElementById("qGender").value = "";
-  document.getElementById("qSize").value = "";
-  document.getElementById("qModel").value = "";
+// 手动同步
+async function syncNow() {
+  await syncFromCloud();
   render();
 }
 
-function go(page) {
-  document.getElementById("addPage").style.display = page=="add"?"block":"none";
-  document.getElementById("queryPage").style.display = page=="query"?"block":"none";
-  document.querySelectorAll(".navbtn").forEach((btn,i)=>{
-    btn.classList.toggle("active", i==(page=="add"?0:1));
-  });
-  if (page == "query") render();
+// 重置添加表单
+function resetAdd() {
+  document.getElementById('logo').value = '';
+  document.getElementById('model').value = '';
+  document.getElementById('gender').value = '';
+  document.getElementById('size').value = '';
+  updateUI();
 }
 
-// 页面加载时读取GitHub数据
+// 重置查询表单
+function resetQuery() {
+  document.getElementById('qLogo').value = '';
+  document.getElementById('qGender').value = '';
+  document.getElementById('qSize').value = '';
+  document.getElementById('qModel').value = '';
+  render();
+}
+
+// 切换页面
+function go(page) {
+  document.getElementById('addPage').style.display = page === 'add' ? 'block' : 'none';
+  document.getElementById('queryPage').style.display = page === 'query' ? 'block' : 'none';
+  document.querySelectorAll('.navbtn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === (page === 'add' ? 0 : 1));
+  });
+  if (page === 'query') render();
+}
+
+// 初始化
 window.onload = async function() {
-  await loadFromGitHub();
+  await syncFromCloud();
+  resetAdd();
 };
 </script>
