@@ -116,6 +116,21 @@
             max-width:400px;
         }
         .qrcode{margin:10px 0;text-align:center}
+        
+        /* 自动消失提示框样式 */
+        .toast{
+            position:fixed;top:20px;left:50%;
+            transform:translateX(-50%);
+            background:rgba(0,0,0,0.8);
+            color:white;padding:12px 24px;
+            border-radius:8px;font-size:16px;
+            z-index:1001;opacity:0;
+            transition:opacity 0.3s ease;
+            pointer-events:none;
+        }
+        .toast.show{
+            opacity:1;
+        }
     </style>
 </head>
 <body>
@@ -236,6 +251,9 @@
         </div>
     </div>
 
+    <!-- 自动消失提示框 -->
+    <div class="toast" id="toast"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script>
         const STORAGE_KEY = "goods_data_simple";
@@ -281,6 +299,17 @@
             autoNo();
         }
 
+        // 显示自动消失提示框
+        function showToast(message, duration = 1000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+
         // 保存记录
         function save() {
             const goodsNo = document.getElementById("goodsNo").value.trim();
@@ -290,7 +319,7 @@
             const size = document.getElementById("size").value;
             
             if (!goodsNo || !logo || !model || !gender || !size) {
-                alert("请填写完整的货品信息！");
+                showToast("请填写完整的货品信息！", 1500);
                 return;
             }
             
@@ -298,7 +327,8 @@
             data.push({ goodsNo, logo, model, gender, size });
             saveData();
             resetAdd();
-            alert("✅ 货品信息保存成功！");
+            // 显示成功提示，1秒自动消失
+            showToast("✅ 货品信息保存成功！");
         }
 
         // 删除记录
@@ -308,6 +338,7 @@
                 saveData();
                 render();
                 updateStats();
+                showToast("🗑️ 记录已删除", 1000);
             }
         }
 
@@ -360,6 +391,7 @@
             // 自动复制
             navigator.clipboard.writeText(text).then(() => {
                 console.log("自动复制成功");
+                showToast("📋 数据已复制到剪贴板", 1500);
             }).catch(err => {});
 
             if (window.QRCode) {
@@ -378,7 +410,7 @@
         function confirmImport() {
             const text = document.getElementById("importText").value.trim();
             if (!text) { 
-                alert("请粘贴导出的文本内容！"); 
+                showToast("请粘贴导出的文本内容！", 1500);
                 return; 
             }
             
@@ -400,10 +432,10 @@
                 closeModal('importModal');
                 render();
                 updateStats();
-                alert("✅ 数据导入成功！已合并原有数据");
+                showToast("✅ 数据导入成功！", 1500);
             } catch(e) { 
                 console.error(e);
-                alert("❌ 导入失败，请检查文本是否正确！"); 
+                showToast("❌ 导入失败，请检查文本！", 2000);
             }
         }
 
