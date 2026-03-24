@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>货品管理</title>
+    <title>瑞盛服饰货品管理</title>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{background:#f7f7f7;font-family:Arial,sans-serif}
@@ -135,7 +135,7 @@
 </head>
 <body>
     <div class="head">
-        <div class="title">货品管理</div>
+        <div class="title">瑞盛服饰货品管理</div>
         <div class="nav">
             <button class="navbtn active" onclick="go('add')">添加货品</button>
             <button class="navbtn" onclick="go('query')">查询货品</button>
@@ -149,10 +149,10 @@
 
     <!-- 功能按钮栏 - 合并所有操作按钮 -->
     <div class="func-bar">
-        <button class="func-btn primary" onclick="exportData()">📤 导出数据</button>
-        <button class="func-btn secondary" onclick="importData()">📥 导入数据</button>
-        <button class="func-btn secondary" onclick="resetAdd()">🔄 重置</button>
-        <button class="func-btn primary" onclick="save()">💾 保存</button>
+        <button class="func-btn primary" onclick="exportData()">?? 导出数据</button>
+        <button class="func-btn secondary" onclick="importData()">?? 导入数据</button>
+        <button class="func-btn secondary" onclick="resetAdd()">?? 重置</button>
+        <button class="func-btn primary" onclick="save()">?? 保存</button>
     </div>
 
     <!-- 添加页面 -->
@@ -217,8 +217,8 @@
             </div>
             <!-- 重置+查询按钮 -->
             <div class="btns" style="justify-content: space-between; margin: 10px 0;">
-                <button class="btn btn1" onclick="resetQuery()">🔄 重置查询</button>
-                <button class="btn btn1" onclick="render()">🔍 查询货品</button>
+                <button class="btn btn1" onclick="resetQuery()">?? 重置查询</button>
+                <button class="btn btn1" onclick="render()">?? 查询货品</button>
             </div>
             <table class="table">
                 <thead><tr><th>编号</th><th>品牌</th><th>型号</th><th>性别</th><th>尺码</th><th>操作</th></tr></thead>
@@ -230,9 +230,9 @@
     <!-- 导出弹窗 -->
     <div class="modal" id="exportModal">
         <div class="modal-content">
-            <h3 style="text-align:center;margin-bottom:15px;font-size:18px">📤 导出数据</h3>
+            <h3 style="text-align:center;margin-bottom:15px;font-size:18px">?? 导出数据</h3>
             <div class="qrcode" id="qrcode"></div>
-            <p style="font-size:14px;color:#02a902;text-align:center;margin:10px 0">✅ 数据已自动复制到剪贴板</p>
+            <p style="font-size:14px;color:#02a902;text-align:center;margin:10px 0">? 数据已自动复制到剪贴板</p>
             <textarea id="exportText" readonly style="width:100%;height:80px;padding:10px;border-radius:8px;font-size:14px"></textarea>
             <div style="display:flex;justify-content:center;margin-top:15px">
                 <button class="func-btn secondary" onclick="closeModal('exportModal')" style="width:100px">关闭</button>
@@ -243,11 +243,11 @@
     <!-- 导入弹窗 -->
     <div class="modal" id="importModal">
         <div class="modal-content">
-            <h3 style="text-align:center;margin-bottom:15px;font-size:18px">📥 导入数据</h3>
+            <h3 style="text-align:center;margin-bottom:15px;font-size:18px">?? 导入数据</h3>
             <p style="font-size:14px;color:#666;margin-bottom:10px">粘贴导出的文本内容</p>
             <textarea id="importText" placeholder="粘贴到这里..." style="width:100%;height:120px;border:none;outline:none;padding:10px;font-size:16px"></textarea>
             <div style="display:flex;justify-content:center;gap:10px;margin-top:15px">
-                <button class="func-btn primary" onclick="confirmImport()" style="width:120px">✅ 确认导入</button>
+                <button class="func-btn primary" onclick="confirmImport()" style="width:120px">? 确认导入</button>
                 <button class="func-btn secondary" onclick="closeModal('importModal')" style="width:100px">取消</button>
             </div>
         </div>
@@ -311,7 +311,7 @@
             // 刷新表格，显示全部数据
             render();
             // 显示重置成功提示
-            showToast("🔄 查询条件已重置", 1000);
+            showToast("?? 查询条件已重置", 1000);
         }
 
         // 显示自动消失提示框
@@ -343,7 +343,7 @@
             saveData();
             resetAdd();
             // 显示成功提示，1秒自动消失
-            showToast("✅ 货品信息保存成功！");
+            showToast("? 货品信息保存成功！");
         }
 
         // 删除记录
@@ -353,7 +353,7 @@
                 saveData();
                 render();
                 updateStats();
-                showToast("🗑️ 记录已删除", 1000);
+                showToast("??? 记录已删除", 1000);
             }
         }
 
@@ -380,7 +380,7 @@
                     <td>${x.model}</td>
                     <td>${x.gender=="male"?"男":"女"}</td>
                     <td>${x.size}</td>
-                    <td><button class="del" onclick="del('${x.goodsNo}')">🗑️ 删除</button></td>
+                    <td><button class="del" onclick="del('${x.goodsNo}')">??? 删除</button></td>
                 </tr>`;
             });
             
@@ -401,7 +401,7 @@
         // 修复：导出数据函数
         function exportData() {
             if (data.length === 0) {
-                showToast("❌ 暂无数据可导出", 1500);
+                showToast("? 暂无数据可导出", 1500);
                 return;
             }
             const text = btoa(JSON.stringify(data));
@@ -409,9 +409,9 @@
 
             // 自动复制到剪贴板
             navigator.clipboard.writeText(text).then(() => {
-                showToast("📋 数据已复制到剪贴板", 1500);
+                showToast("?? 数据已复制到剪贴板", 1500);
             }).catch(err => {
-                showToast("❌ 复制失败，请手动复制", 1500);
+                showToast("? 复制失败，请手动复制", 1500);
             });
 
             // 生成二维码
@@ -454,10 +454,10 @@
                 closeModal('importModal');
                 render();
                 updateStats();
-                showToast("✅ 数据导入成功！", 1500);
+                showToast("? 数据导入成功！", 1500);
             } catch(e) { 
                 console.error(e);
-                showToast("❌ 导入失败，请检查文本！", 2000);
+                showToast("? 导入失败，请检查文本！", 2000);
             }
         }
 
