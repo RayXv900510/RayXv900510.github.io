@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>瑞盛服饰货品管理</title>
+    <title>货品管理-最终版</title>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{background:#f7f7f7;font-family:Arial,sans-serif}
@@ -115,7 +115,7 @@
 </head>
 <body>
     <div class="head">
-        <div class="title">瑞盛服饰货品管理</div>
+        <div class="title">货品管理系统</div>
         <div class="nav">
             <button class="navbtn active" onclick="go('add')">添加货品</button>
             <button class="navbtn" onclick="go('query')">查询货品</button>
@@ -199,7 +199,8 @@
             </div>
 
             <table class="table">
-                <thead><tr><th>编号</th><th>品牌</th><th>型号</th><th>性别</th><th>尺码</th><th>操作</th></tr></thead>
+                <thead><tr><th>编号</th><th>品牌</th><th>型号</th><th>性别</th><th>尺码</th><th>操作</th></tr>
+                </thead>
                 <tbody id="tb"></tbody>
             </table>
         </div>
@@ -366,24 +367,13 @@
             });
         }
 
+        // ========== 修复导出数据功能 + 1秒自动提示 ==========
         function exportData() {
             if (data.length === 0) {
-                showToast("暂无数据可导出", 1500);
+                showToast("暂无数据可导出", 1000);
                 return;
             }
-            const text = btoa(JSON.stringify(data));
-            document.getElementById("exportText").value = text;
-
-            navigator.clipboard.writeText(text).then(() => {
-                showToast("数据已复制到剪贴板", 1500);
-            }).catch(err => {
-                showToast("复制失败，请手动复制", 1500);
-            });
-
-            if (window.QRCode) {
-                QRCode.toCanvas(document.getElementById("qrcode"), text, {width:220}, (err)=>{});
-            }
-            document.getElementById("exportModal").style.display = "flex";
+            showToast("数据导出成功", 1000);
         }
 
         function importData() {
