@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>瑞盛货品管理</title>
+    <title>瑞盛服饰货品管理</title>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{background:#f7f7f7;font-family:Arial,sans-serif}
@@ -68,20 +68,6 @@
             font-size:16px;cursor:pointer;
         }
         
-        .query-btn-container{display:flex;gap:10px;margin:15px 0}
-        .query-btn{
-            flex:1;padding:15px 0;
-            border-radius:8px;border:none;
-            background:#2563eb;color:white;
-            font-size:18px;font-weight:bold;
-        }
-        .reset-btn{
-            flex:1;padding:15px 0;
-            border-radius:8px;border:none;
-            background:#e5e7eb;color:#333;
-            font-size:18px;font-weight:bold;
-        }
-        
         .suggestions{
             position:absolute;background:white;
             border:1px solid #ddd;border-radius:8px;
@@ -129,7 +115,7 @@
 </head>
 <body>
     <div class="head">
-        <div class="title">瑞盛货品管理</div>
+        <div class="title">瑞盛服饰货品管理</div>
         <div class="nav">
             <button class="navbtn active" onclick="go('add')">添加货品</button>
             <button class="navbtn" onclick="go('query')">查询货品</button>
@@ -141,11 +127,18 @@
         </div>
     </div>
 
-    <div class="func-bar">
+    <div class="func-bar" id="funcAdd" style="display:flex;">
         <button class="func-btn primary" onclick="exportData()">导出数据</button>
         <button class="func-btn secondary" onclick="importData()">导入数据</button>
         <button class="func-btn secondary" onclick="resetAdd()">重置</button>
         <button class="func-btn primary" onclick="save()">保存</button>
+    </div>
+
+    <div class="func-bar" id="funcQuery" style="display:none;">
+        <button class="func-btn primary" onclick="exportData()">导出数据</button>
+        <button class="func-btn secondary" onclick="importData()">导入数据</button>
+        <button class="func-btn secondary" onclick="resetQuery()">重置查询</button>
+        <button class="func-btn primary" onclick="render()">查询货品</button>
     </div>
 
     <div id="addPage" class="page active">
@@ -203,11 +196,6 @@
                     <input class="input" id="qModel" oninput="suggest(this, 'model', 'q')" placeholder="输入型号关键词">
                     <div id="qModelSuggestions" class="suggestions"></div>
                 </div>
-            </div>
-
-            <div class="query-btn-container">
-                <button class="reset-btn" onclick="resetQuery()">重置查询</button>
-                <button class="query-btn" onclick="render()">查询货品</button>
             </div>
 
             <table class="table">
@@ -361,12 +349,21 @@
         }
 
         function go(page) {
-            document.getElementById("addPage").classList.toggle("active", page=="add");
-            document.getElementById("queryPage").classList.toggle("active", page=="query");
+            if(page == 'add'){
+                document.getElementById("addPage").classList.add("active");
+                document.getElementById("queryPage").classList.remove("active");
+                document.getElementById("funcAdd").style.display = "flex";
+                document.getElementById("funcQuery").style.display = "none";
+            }else{
+                document.getElementById("queryPage").classList.add("active");
+                document.getElementById("addPage").classList.remove("active");
+                document.getElementById("funcAdd").style.display = "none";
+                document.getElementById("funcQuery").style.display = "flex";
+                render();
+            }
             document.querySelectorAll(".navbtn").forEach((btn,i)=>{
                 btn.classList.toggle("active", i==(page=="add"?0:1));
             });
-            if (page=="query") render();
         }
 
         function exportData() {
