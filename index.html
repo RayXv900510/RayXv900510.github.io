@@ -215,8 +215,10 @@
                     <div id="qModelSuggestions" class="suggestions"></div>
                 </div>
             </div>
-            <div class="query-btn-container">
-                <button class="query-btn" onclick="render()">🔍 查询货品</button>
+            <!-- 重置+查询按钮 -->
+            <div class="btns" style="justify-content: space-between; margin: 10px 0;">
+                <button class="btn btn1" onclick="resetQuery()">🔄 重置查询</button>
+                <button class="btn btn1" onclick="render()">🔍 查询货品</button>
             </div>
             <table class="table">
                 <thead><tr><th>编号</th><th>品牌</th><th>型号</th><th>性别</th><th>尺码</th><th>操作</th></tr></thead>
@@ -297,6 +299,19 @@
             document.getElementById("gender").value = "";
             document.getElementById("size").value = "";
             autoNo();
+        }
+
+        // 重置查询表单
+        function resetQuery() {
+            // 清空所有查询输入框
+            document.getElementById("qLogo").value = "";
+            document.getElementById("qGender").value = "";
+            document.getElementById("qSize").value = "";
+            document.getElementById("qModel").value = "";
+            // 刷新表格，显示全部数据
+            render();
+            // 显示重置成功提示
+            showToast("🔄 查询条件已重置", 1000);
         }
 
         // 显示自动消失提示框
@@ -383,20 +398,27 @@
             if (page=="query") render();
         }
 
-        // 导出数据
+        // 修复：导出数据函数
         function exportData() {
+            if (data.length === 0) {
+                showToast("❌ 暂无数据可导出", 1500);
+                return;
+            }
             const text = btoa(JSON.stringify(data));
             document.getElementById("exportText").value = text;
 
-            // 自动复制
+            // 自动复制到剪贴板
             navigator.clipboard.writeText(text).then(() => {
-                console.log("自动复制成功");
                 showToast("📋 数据已复制到剪贴板", 1500);
-            }).catch(err => {});
+            }).catch(err => {
+                showToast("❌ 复制失败，请手动复制", 1500);
+            });
 
+            // 生成二维码
             if (window.QRCode) {
                 QRCode.toCanvas(document.getElementById("qrcode"), text, {width:220}, (err)=>{});
             }
+            // 打开导出弹窗
             document.getElementById("exportModal").style.display = "flex";
         }
 
