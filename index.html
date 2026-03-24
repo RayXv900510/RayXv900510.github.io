@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>瑞盛服饰货品管理</title>
+    <title>瑞盛货品管理</title>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{background:#f7f7f7;font-family:Arial,sans-serif}
@@ -121,7 +121,7 @@
 </head>
 <body>
     <div class="head">
-        <div class="title">瑞盛服饰货品管理</div>
+        <div class="title">瑞盛货品管理</div>
         <div class="nav">
             <button class="navbtn active" onclick="go('add')">添加货品</button>
             <button class="navbtn" onclick="go('query')">查询货品</button>
@@ -150,8 +150,9 @@
     <div id="addPage" class="page active">
         <div class="card">
             <div class="item">
-                <div class="label">货品编号</div>
-                <input class="input" id="goodsNo" readonly>
+                <div class="label">货品编号（可手动修改）</div>
+                <!-- 移除 readonly，允许手动输入 -->
+                <input class="input" id="goodsNo">
             </div>
             <div class="item input-container">
                 <div class="label">品牌</div>
@@ -259,13 +260,15 @@
             document.getElementById("female").innerText = data.filter(x=>x.gender=="female").length;
         }
 
+        // ========== 修复：自动计算当前最大编号 +1 ==========
         function autoNo() {
-            if (!data.length) { 
+            if (!data || data.length === 0) { 
                 document.getElementById("goodsNo").value = "1"; 
                 return; 
             }
+            // 取出所有有效数字编号
             const nums = data.map(x => parseInt(x.goodsNo)).filter(n => !isNaN(n));
-            const maxNum = Math.max(...nums);
+            const maxNum = nums.length > 0 ? Math.max(...nums) : 0;
             document.getElementById("goodsNo").value = (maxNum + 1).toString();
         }
 
@@ -274,7 +277,7 @@
             document.getElementById("model").value = "";
             document.getElementById("gender").value = "";
             document.getElementById("size").value = "";
-            autoNo();
+            autoNo(); // 重置时重新计算编号
         }
 
         function resetQuery() {
@@ -380,19 +383,15 @@
             }
             
             try {
-                // 生成数据字符串
                 const str = JSON.stringify(data);
-                // 自动复制到剪贴板
                 navigator.clipboard.writeText(str).then(() => {
                     document.getElementById("exportText").value = str;
-                    // 生成二维码
                     if (window.QRCode) {
                         QRCode.toCanvas(document.getElementById("qrcode"), str, {width:220}, (err)=>{});
                     }
                     showToast("数据已复制成功", 1000);
                     document.getElementById("exportModal").style.display = "flex";
                 }).catch(() => {
-                    // 降级兼容方案
                     let input = document.createElement('textarea');
                     input.value = str;
                     document.body.appendChild(input);
@@ -409,15 +408,15 @@
             }
         }
 
-        // 打开导入弹窗（修复：清空文本框+聚焦）
+        // 打开导入弹窗
         function importData() {
             const importText = document.getElementById("importText");
             importText.value = "";
-            importText.focus(); // 自动聚焦，方便直接粘贴
+            importText.focus();
             document.getElementById("importModal").style.display = "flex";
         }
 
-        // 确认导入数据
+        // 确认导入 + 导入后重新计算编号
         function confirmImport() {
             const text = document.getElementById("importText").value.trim();
             if (!text) { 
@@ -426,14 +425,12 @@
             }
             
             try {
-                // 解析导入的字符串
                 const importData = JSON.parse(text);
-                // 校验数据格式
-                if (!Array.isArray(importData) || importData.some(item => !item.goodsNo || !item.logo)) {
+                if (!Array.isArray(importData)) {
                     showToast("数据格式错误！", 2000);
                     return;
                 }
-                // 合并数据（新增/覆盖）
+                
                 importData.forEach(item => {
                     const index = data.findIndex(x => x.goodsNo === item.goodsNo);
                     if (index === -1) {
@@ -442,10 +439,11 @@
                         data[index] = item;
                     }
                 });
-                // 保存并刷新
+                
                 saveData();
                 closeModal('importModal');
                 render();
+                autoNo(); // 导入后强制重新计算最新编号
                 showToast("数据导入成功！", 1500);
             } catch(e) { 
                 console.error(e);
