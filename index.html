@@ -3,12 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>瑞盛服饰货品管理</title>
+    <title>瑞盛货品管理</title>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{background:#f7f7f7;font-family:Arial,sans-serif}
         
-        /* 头部样式 */
         .head{background:white;padding:15px;margin-bottom:10px}
         .title{text-align:center;font-weight:bold;font-size:18px;margin-bottom:10px}
         .nav{display:flex;gap:8px;margin-bottom:10px}
@@ -20,13 +19,11 @@
         }
         .navbtn.active{background:#2563eb;color:white}
         
-        /* 统计区域 - 缩小显示 */
         .stats{display:flex;gap:8px}
         .stat{flex:1;background:#eef2ff;padding:6px;border-radius:6px;text-align:center}
         .stat .l{font-size:10px;color:#666;margin-bottom:2px}
         .stat .n{font-weight:bold;font-size:14px}
         
-        /* 功能按钮栏 - 核心优化行 */
         .func-bar{
             display:flex;gap:8px;
             padding:12px 15px;background:white;
@@ -38,16 +35,13 @@
             font-size:18px;font-weight:bold;
             display:flex;justify-content:center;
             align-items:center;
-            gap:5px;
         }
         .func-btn.primary{background:#2563eb;color:white}
         .func-btn.secondary{background:#e5e7eb;color:#333}
         
-        /* 页面容器 */
         .page{padding:0 15px;display:none}
         .page.active{display:block}
         
-        /* 表单样式 */
         .card{background:white;border-radius:10px;padding:20px;margin-bottom:15px}
         .item{margin-bottom:15px}
         .label{font-size:16px;margin-bottom:6px;font-weight:500}
@@ -59,7 +53,6 @@
         .row{display:flex;gap:10px;margin-bottom:15px}
         .col{flex:1}
         
-        /* 表格样式 */
         .table{width:100%;border-collapse:collapse;margin-top:15px}
         .table th{
             background:#f9fafb;padding:12px;
@@ -75,17 +68,20 @@
             font-size:16px;cursor:pointer;
         }
         
-        /* 查询按钮 */
-        .query-btn-container{display:flex;justify-content:center;margin:15px 0}
+        .query-btn-container{display:flex;gap:10px;margin:15px 0}
         .query-btn{
-            padding:15px 30px;
+            flex:1;padding:15px 0;
             border-radius:8px;border:none;
             background:#2563eb;color:white;
             font-size:18px;font-weight:bold;
-            width:100%;max-width:100%;
+        }
+        .reset-btn{
+            flex:1;padding:15px 0;
+            border-radius:8px;border:none;
+            background:#e5e7eb;color:#333;
+            font-size:18px;font-weight:bold;
         }
         
-        /* 智能联想 - 通用样式 */
         .suggestions{
             position:absolute;background:white;
             border:1px solid #ddd;border-radius:8px;
@@ -101,7 +97,6 @@
         .suggestion-item:hover{background:#f0f7ff}
         .input-container{position:relative}
         
-        /* 弹窗样式 */
         .modal{
             position:fixed;top:0;left:0;
             width:100%;height:100%;
@@ -117,7 +112,6 @@
         }
         .qrcode{margin:10px 0;text-align:center}
         
-        /* 自动消失提示框样式 */
         .toast{
             position:fixed;top:20px;left:50%;
             transform:translateX(-50%);
@@ -135,7 +129,7 @@
 </head>
 <body>
     <div class="head">
-        <div class="title">瑞盛服饰货品管理</div>
+        <div class="title">瑞盛货品管理</div>
         <div class="nav">
             <button class="navbtn active" onclick="go('add')">添加货品</button>
             <button class="navbtn" onclick="go('query')">查询货品</button>
@@ -147,15 +141,13 @@
         </div>
     </div>
 
-    <!-- 功能按钮栏 - 合并所有操作按钮 -->
     <div class="func-bar">
-        <button class="func-btn primary" onclick="exportData()">?? 导出数据</button>
-        <button class="func-btn secondary" onclick="importData()">?? 导入数据</button>
-        <button class="func-btn secondary" onclick="resetAdd()">?? 重置</button>
-        <button class="func-btn primary" onclick="save()">?? 保存</button>
+        <button class="func-btn primary" onclick="exportData()">导出数据</button>
+        <button class="func-btn secondary" onclick="importData()">导入数据</button>
+        <button class="func-btn secondary" onclick="resetAdd()">重置</button>
+        <button class="func-btn primary" onclick="save()">保存</button>
     </div>
 
-    <!-- 添加页面 -->
     <div id="addPage" class="page active">
         <div class="card">
             <div class="item">
@@ -194,11 +186,9 @@
         </div>
     </div>
 
-    <!-- 查询页面 -->
     <div id="queryPage" class="page">
         <div class="card">
             <div class="row">
-                <!-- 查询品牌 - 添加智能联想 -->
                 <div class="col item input-container">
                     <div class="label">品牌</div>
                     <input class="input" id="qLogo" oninput="suggest(this, 'logo', 'q')" placeholder="输入品牌关键词">
@@ -208,18 +198,18 @@
             </div>
             <div class="row">
                 <div class="col item"><div class="label">尺码</div><input class="input" id="qSize" placeholder="输入尺码数字"></div>
-                <!-- 查询型号 - 添加智能联想 -->
                 <div class="col item input-container">
                     <div class="label">型号</div>
                     <input class="input" id="qModel" oninput="suggest(this, 'model', 'q')" placeholder="输入型号关键词">
                     <div id="qModelSuggestions" class="suggestions"></div>
                 </div>
             </div>
-            <!-- 重置+查询按钮 -->
-            <div class="btns" style="justify-content: space-between; margin: 10px 0;">
-                <button class="btn btn1" onclick="resetQuery()">?? 重置查询</button>
-                <button class="btn btn1" onclick="render()">?? 查询货品</button>
+
+            <div class="query-btn-container">
+                <button class="reset-btn" onclick="resetQuery()">重置查询</button>
+                <button class="query-btn" onclick="render()">查询货品</button>
             </div>
+
             <table class="table">
                 <thead><tr><th>编号</th><th>品牌</th><th>型号</th><th>性别</th><th>尺码</th><th>操作</th></tr></thead>
                 <tbody id="tb"></tbody>
@@ -227,12 +217,11 @@
         </div>
     </div>
 
-    <!-- 导出弹窗 -->
     <div class="modal" id="exportModal">
         <div class="modal-content">
-            <h3 style="text-align:center;margin-bottom:15px;font-size:18px">?? 导出数据</h3>
+            <h3 style="text-align:center;margin-bottom:15px;font-size:18px">导出数据</h3>
             <div class="qrcode" id="qrcode"></div>
-            <p style="font-size:14px;color:#02a902;text-align:center;margin:10px 0">? 数据已自动复制到剪贴板</p>
+            <p style="font-size:14px;color:#02a902;text-align:center;margin:10px 0">数据已自动复制到剪贴板</p>
             <textarea id="exportText" readonly style="width:100%;height:80px;padding:10px;border-radius:8px;font-size:14px"></textarea>
             <div style="display:flex;justify-content:center;margin-top:15px">
                 <button class="func-btn secondary" onclick="closeModal('exportModal')" style="width:100px">关闭</button>
@@ -240,20 +229,18 @@
         </div>
     </div>
 
-    <!-- 导入弹窗 -->
     <div class="modal" id="importModal">
         <div class="modal-content">
-            <h3 style="text-align:center;margin-bottom:15px;font-size:18px">?? 导入数据</h3>
+            <h3 style="text-align:center;margin-bottom:15px;font-size:18px">导入数据</h3>
             <p style="font-size:14px;color:#666;margin-bottom:10px">粘贴导出的文本内容</p>
             <textarea id="importText" placeholder="粘贴到这里..." style="width:100%;height:120px;border:none;outline:none;padding:10px;font-size:16px"></textarea>
             <div style="display:flex;justify-content:center;gap:10px;margin-top:15px">
-                <button class="func-btn primary" onclick="confirmImport()" style="width:120px">? 确认导入</button>
+                <button class="func-btn primary" onclick="confirmImport()" style="width:120px">确认导入</button>
                 <button class="func-btn secondary" onclick="closeModal('importModal')" style="width:100px">取消</button>
             </div>
         </div>
     </div>
 
-    <!-- 自动消失提示框 -->
     <div class="toast" id="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
@@ -261,27 +248,23 @@
         const STORAGE_KEY = "goods_data_simple";
         let data = [];
 
-        // 加载本地数据
         function loadData() {
             try { data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [] } catch { data = [] }
             updateStats();
             autoNo();
         }
 
-        // 保存到本地
         function saveData() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
             updateStats();
         }
 
-        // 更新统计
         function updateStats() {
             document.getElementById("total").innerText = data.length;
             document.getElementById("male").innerText = data.filter(x=>x.gender=="male").length;
             document.getElementById("female").innerText = data.filter(x=>x.gender=="female").length;
         }
 
-        // 自动生成编号
         function autoNo() {
             if (!data.length) { 
                 document.getElementById("goodsNo").value = "1"; 
@@ -292,7 +275,6 @@
             document.getElementById("goodsNo").value = (maxNum + 1).toString();
         }
 
-        // 重置添加表单
         function resetAdd() {
             document.getElementById("logo").value = "";
             document.getElementById("model").value = "";
@@ -301,31 +283,24 @@
             autoNo();
         }
 
-        // 重置查询表单
         function resetQuery() {
-            // 清空所有查询输入框
             document.getElementById("qLogo").value = "";
             document.getElementById("qGender").value = "";
             document.getElementById("qSize").value = "";
             document.getElementById("qModel").value = "";
-            // 刷新表格，显示全部数据
             render();
-            // 显示重置成功提示
-            showToast("?? 查询条件已重置", 1000);
+            showToast("查询条件已重置", 1000);
         }
 
-        // 显示自动消失提示框
         function showToast(message, duration = 1000) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.classList.add('show');
-            
             setTimeout(() => {
                 toast.classList.remove('show');
             }, duration);
         }
 
-        // 保存记录
         function save() {
             const goodsNo = document.getElementById("goodsNo").value.trim();
             const logo = document.getElementById("logo").value.trim();
@@ -342,22 +317,19 @@
             data.push({ goodsNo, logo, model, gender, size });
             saveData();
             resetAdd();
-            // 显示成功提示，1秒自动消失
-            showToast("? 货品信息保存成功！");
+            showToast("货品信息保存成功！");
         }
 
-        // 删除记录
         function del(goodsNo) {
             if (confirm("确定要删除这条记录吗？")) {
                 data = data.filter(x=>x.goodsNo != goodsNo);
                 saveData();
                 render();
                 updateStats();
-                showToast("??? 记录已删除", 1000);
+                showToast("记录已删除", 1000);
             }
         }
 
-        // 渲染查询列表
         function render() {
             const qLogo = document.getElementById("qLogo").value.toLowerCase();
             const qGender = document.getElementById("qGender").value;
@@ -380,7 +352,7 @@
                     <td>${x.model}</td>
                     <td>${x.gender=="male"?"男":"女"}</td>
                     <td>${x.size}</td>
-                    <td><button class="del" onclick="del('${x.goodsNo}')">??? 删除</button></td>
+                    <td><button class="del" onclick="del('${x.goodsNo}')">删除</button></td>
                 </tr>`;
             });
             
@@ -388,7 +360,6 @@
             document.getElementById("tb").innerHTML = html;
         }
 
-        // 切换页面
         function go(page) {
             document.getElementById("addPage").classList.toggle("active", page=="add");
             document.getElementById("queryPage").classList.toggle("active", page=="query");
@@ -398,37 +369,31 @@
             if (page=="query") render();
         }
 
-        // 修复：导出数据函数
         function exportData() {
             if (data.length === 0) {
-                showToast("? 暂无数据可导出", 1500);
+                showToast("暂无数据可导出", 1500);
                 return;
             }
             const text = btoa(JSON.stringify(data));
             document.getElementById("exportText").value = text;
 
-            // 自动复制到剪贴板
             navigator.clipboard.writeText(text).then(() => {
-                showToast("?? 数据已复制到剪贴板", 1500);
+                showToast("数据已复制到剪贴板", 1500);
             }).catch(err => {
-                showToast("? 复制失败，请手动复制", 1500);
+                showToast("复制失败，请手动复制", 1500);
             });
 
-            // 生成二维码
             if (window.QRCode) {
                 QRCode.toCanvas(document.getElementById("qrcode"), text, {width:220}, (err)=>{});
             }
-            // 打开导出弹窗
             document.getElementById("exportModal").style.display = "flex";
         }
 
-        // 导入数据弹窗
         function importData() {
             document.getElementById("importText").value = "";
             document.getElementById("importModal").style.display = "flex";
         }
 
-        // 确认导入
         function confirmImport() {
             const text = document.getElementById("importText").value.trim();
             if (!text) { 
@@ -454,33 +419,28 @@
                 closeModal('importModal');
                 render();
                 updateStats();
-                showToast("? 数据导入成功！", 1500);
+                showToast("数据导入成功！", 1500);
             } catch(e) { 
                 console.error(e);
-                showToast("? 导入失败，请检查文本！", 2000);
+                showToast("导入失败，请检查文本！", 2000);
             }
         }
 
-        // 关闭弹窗
         function closeModal(id) {
             document.getElementById(id).style.display = "none";
         }
 
-        // 智能联想函数 - 支持添加/查询双场景
         function suggest(input, type, prefix = "") {
             const value = input.value.toLowerCase();
-            // 拼接联想容器ID（区分添加/查询）
             const suggestionsId = prefix ? `${prefix}${type.charAt(0).toUpperCase() + type.slice(1)}Suggestions` : `${type}Suggestions`;
             const suggestions = document.getElementById(suggestionsId);
             suggestions.innerHTML = "";
             
             if (!value || !data.length) return;
             
-            // 提取唯一值并筛选匹配项
             const uniqueItems = [...new Set(data.map(item => item[type]))];
             const matches = uniqueItems.filter(item => item.toLowerCase().includes(value));
             
-            // 显示匹配结果
             matches.forEach(item => {
                 const div = document.createElement("div");
                 div.className = "suggestion-item";
@@ -493,7 +453,6 @@
             });
         }
 
-        // 初始化
         window.onload = function() {
             loadData();
             resetAdd();
